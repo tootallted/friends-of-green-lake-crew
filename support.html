@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support the Rowing Community &middot; Friends of Green Lake Crew</title>
+<meta name="description" content="Pick a cause and give to Green Lake Crew via PayPal, Venmo, or Zelle — scholarships, equipment, coaches' training, boat upkeep, adaptive rowing, and the Launch House campaign.">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="oar-stripe"></div>
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" fill="#1f6f4a"/>
+        <path d="M4 24c4-3 8-3 12 0s8 3 12 0 8-3 12 0" stroke="#e7f2ea" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect x="17" y="6" width="6" height="18" rx="3" transform="rotate(20 20 15)" fill="#c9982f"/>
+      </svg>
+      <span>
+        Friends of Green Lake Crew
+        <span class="brand-sub">Supporting Green Lake Crew</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Vision</a>
+      <a href="support.html" class="active">Support the Rowing Community</a>
+      <a href="get-involved.html">Get Involved</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <span class="eyebrow">Give</span>
+  <h1>Support the Rowing Community</h1>
+  <p class="tagline">
+    Pick the cause closest to your heart, then give whichever way is easiest for you —
+    PayPal, Venmo, or Zelle.
+  </p>
+</header>
+
+<main>
+
+  <section>
+    <h2>Choose a cause</h2>
+    <p class="section-lede">Select one to earmark your gift. Every option below directly supports Green Lake Crew rowers.</p>
+
+    <form>
+      <div class="cause-grid" id="cause-grid"></div>
+    </form>
+
+    <div class="give-panel" id="give-panel">
+      <div class="give-heading">
+        <h3>Give to: <span id="give-selected-cause">&nbsp;</span></h3>
+        <span class="give-selected">via PayPal, Venmo, or Zelle</span>
+      </div>
+      <div class="give-note" id="give-note-text"></div>
+
+      <div class="pay-methods">
+        <div class="pay-method">
+          <h4>PayPal
+            <span class="setup-flag" data-if-unconfigured="paypal">Needs setup</span>
+          </h4>
+          <div class="pay-handle" id="paypal-handle">paypal.me/REPLACE_ME</div>
+          <div class="pay-actions">
+            <a class="pay-btn primary" id="paypal-pay-btn" target="_blank" rel="noopener">Give via PayPal</a>
+          </div>
+        </div>
+
+        <div class="pay-method">
+          <h4>Venmo
+            <span class="setup-flag" data-if-unconfigured="venmo">Needs setup</span>
+          </h4>
+          <div class="pay-handle" id="venmo-handle">@REPLACE_ME</div>
+          <div class="pay-actions">
+            <a class="pay-btn primary" id="venmo-pay-btn" target="_blank" rel="noopener">Give via Venmo</a>
+            <button type="button" class="pay-btn" data-copy="@REPLACE_ME">Copy handle</button>
+          </div>
+          <div class="copy-feedback"></div>
+        </div>
+
+        <div class="pay-method">
+          <h4>Zelle
+            <span class="setup-flag" data-if-unconfigured="zelle">Needs setup</span>
+          </h4>
+          <div class="pay-handle" id="zelle-handle">REPLACE_ME@example.org</div>
+          <div class="pay-actions">
+            <button type="button" class="pay-btn" data-copy="REPLACE_ME@example.org">Copy for your bank app</button>
+          </div>
+          <div class="copy-feedback"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where your gift goes</h2>
+    <p class="section-lede">
+      FOGLC is entirely volunteer-run. Every dollar earmarked for a cause above goes
+      toward that fund. Have a question about a gift? Reach our team on the
+      <a href="get-involved.html">Get Involved</a> page.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p><strong>Friends of Green Lake Crew (FOGLC)</strong> &mdash; the volunteer booster community of Green Lake Crew.</p>
+  <p><a href="https://www.greenlakecrew.org/about-us/friends-of-green-lake-crew/">greenlakecrew.org</a> &middot; <a href="get-involved.html">Get in touch</a></p>
+</footer>
+
+<script src="assets/causes.js"></script>
+<script src="assets/payment.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Involved &middot; Friends of Green Lake Crew</title>
+<meta name="description" content="Join the Friends of Green Lake Crew mailing list and connect with the RAC exec team to volunteer and support Green Lake Crew.">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="oar-stripe"></div>
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" fill="#1f6f4a"/>
+        <path d="M4 24c4-3 8-3 12 0s8 3 12 0 8-3 12 0" stroke="#e7f2ea" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect x="17" y="6" width="6" height="18" rx="3" transform="rotate(20 20 15)" fill="#c9982f"/>
+      </svg>
+      <span>
+        Friends of Green Lake Crew
+        <span class="brand-sub">Supporting Green Lake Crew</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Vision</a>
+      <a href="support.html">Support the Rowing Community</a>
+      <a href="get-involved.html" class="active">Get Involved</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <span class="eyebrow">Join Us</span>
+  <h1>Get Involved</h1>
+  <p class="tagline">
+    Join the mailing list to hear about volunteer days, campaigns, and events &mdash;
+    or reach out to the RAC exec team directly.
+  </p>
+</header>
+
+<main>
+
+  <section>
+    <div class="involve-grid">
+      <div>
+        <h2>Join the mailing list</h2>
+        <p class="section-lede">
+          A few emails a season: volunteer opportunities, campaign updates, and ways
+          to show up for Green Lake Crew rowers.
+        </p>
+
+        <!--
+          ACTION NEEDED BEFORE LAUNCH: this form's `action` is a placeholder.
+          Point it at a real form backend (Google Forms, Mailchimp signup,
+          Formspree, etc.) so submissions actually reach FOGLC. Until then,
+          use the "email us directly" fallback below.
+        -->
+        <form class="mail-form" id="mailing-list-form" action="https://REPLACE_WITH_FORM_ENDPOINT" method="POST">
+          <div class="form-field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="form-field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-field">
+            <label>I'm interested in</label>
+            <div class="checkbox-list">
+              <label><input type="checkbox" name="interest" value="newsletter" checked> Newsletter &amp; updates only</label>
+              <label><input type="checkbox" name="interest" value="volunteering"> Volunteering at events</label>
+              <label><input type="checkbox" name="interest" value="committee"> Joining a committee</label>
+              <label><input type="checkbox" name="interest" value="launchhouse"> Launch House Campaign</label>
+            </div>
+          </div>
+          <!-- honeypot field to deter simple bots -->
+          <div class="form-honeypot" aria-hidden="true">
+            <label for="company">Company</label>
+            <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
+          </div>
+          <button type="submit" class="btn btn-green">Join the list</button>
+          <div class="form-status" id="form-status"></div>
+        </form>
+
+        <p class="form-fallback">
+          Prefer email? Reach out directly to
+          <a href="mailto:REPLACE_ME@example.org?subject=Add%20me%20to%20the%20FOGLC%20mailing%20list">REPLACE_ME@example.org</a>
+          and we'll add you.
+        </p>
+      </div>
+
+      <div>
+        <h2>Connect with the RAC exec team</h2>
+        <p class="section-lede">
+          The Rowing Advisory Council exec team is your fastest way to plug in &mdash;
+          whether that's a specific cause, a committee, or just a question.
+        </p>
+        <div class="team-list" id="team-list"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p><strong>Friends of Green Lake Crew (FOGLC)</strong> &mdash; the volunteer booster community of Green Lake Crew.</p>
+  <p><a href="https://www.greenlakecrew.org/about-us/friends-of-green-lake-crew/">greenlakecrew.org</a> &middot; <a href="support.html">Support the rowing community</a></p>
+</footer>
+
+<script src="assets/causes.js"></script>
+<script src="assets/payment.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/site.js"></script>
+<script>
+  document.getElementById("mailing-list-form").addEventListener("submit", function (evt) {
+    var status = document.getElementById("form-status");
+    if (this.action.indexOf("REPLACE_WITH_FORM_ENDPOINT") !== -1) {
+      evt.preventDefault();
+      status.textContent = "This form isn't connected yet — please email us directly below, or ask FOGLC to finish setup.";
+      status.className = "form-status";
+    } else {
+      status.textContent = "Submitting...";
+      status.className = "form-status";
+    }
+  });
+</script>
+</body>
+</html>
