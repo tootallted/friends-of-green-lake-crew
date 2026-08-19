@@ -152,10 +152,36 @@
     });
   }
 
+  function initStories() {
+    var grid = document.getElementById("story-grid");
+    var empty = document.getElementById("story-empty");
+    if (!grid) return;
+
+    var stories = window.FOGLC_STORIES || [];
+
+    if (stories.length === 0) {
+      if (empty) empty.style.display = "block";
+      return;
+    }
+    if (empty) empty.style.display = "none";
+
+    stories.forEach(function (story) {
+      var card = el("div", "story-card");
+      card.innerHTML =
+        '<p class="story-quote">“' + story.quote + '”</p>' +
+        '<p class="story-attribution">' +
+        '<span class="story-name">' + story.name + '</span>' +
+        (story.relation ? '<span class="story-relation">' + story.relation + '</span>' : '') +
+        '</p>';
+      grid.appendChild(card);
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCausePicker();
     initPaymentPanel();
     initCopyButtons();
     initTeamRoster();
+    initStories();
   });
 })();

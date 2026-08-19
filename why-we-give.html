@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why We Give &middot; Friends of Green Lake Crew</title>
+<meta name="description" content="Real reasons, in their own words, from the parents, rowers, and alumni who support Green Lake Crew through Friends of Green Lake Crew. Share why you give.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="oar-stripe"></div>
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img class="brand-mark" src="assets/crest.png" alt="Green Lake Crew crest" width="105" height="150">
+      <span>
+        Friends of Green Lake Crew
+        <span class="brand-sub">Supporting Green Lake Crew</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Vision</a>
+      <a href="why-we-give.html" class="active">Why We Give</a>
+      <a href="support.html">Support the Rowing Community</a>
+      <a href="get-involved.html">Get Involved</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <span class="eyebrow">Community Voices</span>
+  <h1>Why We Give</h1>
+  <p class="tagline">
+    Real reasons, in their own words, from the parents, rowers, coaches, and alumni
+    who make up Friends of Green Lake Crew. Your reason could be the one that
+    convinces someone else to join in.
+  </p>
+</header>
+
+<main>
+
+  <section>
+    <h2>Stories from our community</h2>
+    <p class="section-lede">
+      What Green Lake Crew has meant to the people who support it.
+    </p>
+
+    <div class="story-grid" id="story-grid"></div>
+
+    <div class="story-empty" id="story-empty" style="display: none;">
+      <p class="story-empty-title">These stories are just getting started.</p>
+      <p>Be the first to share why you give — your story will appear here.</p>
+      <a class="btn btn-green" href="#share-your-why">Share your story</a>
+    </div>
+  </section>
+
+  <section id="share-your-why">
+    <h2>Share why you give</h2>
+    <p class="section-lede">
+      Whether Green Lake Crew shaped your child, gave you a second family, or taught
+      you something about showing up — tell us. It takes two minutes, and it might be
+      exactly what someone else needs to hear.
+    </p>
+
+    <!--
+      ACTION NEEDED BEFORE LAUNCH: this form's `action` is a placeholder.
+      Point it at a real form backend (Google Forms, Formspree, etc.) so
+      submissions actually reach FOGLC. Until then, use the "email us
+      directly" fallback below. Submitted stories do NOT appear on this
+      page automatically — add them to assets/stories.js once you have
+      the storyteller's OK on how to credit them.
+    -->
+    <form class="mail-form story-form" id="story-form" action="https://REPLACE_WITH_FORM_ENDPOINT" method="POST">
+      <div class="form-field">
+        <label for="story-name">Name</label>
+        <input type="text" id="story-name" name="name" required>
+      </div>
+      <div class="form-field">
+        <label for="story-email">Email</label>
+        <p class="field-hint">In case we'd like to follow up. Never shown publicly.</p>
+        <input type="email" id="story-email" name="email" required>
+      </div>
+      <div class="form-field">
+        <label for="story-relation">Your connection to Green Lake Crew</label>
+        <select id="story-relation" name="relation" required>
+          <option value="" disabled selected>Choose one&hellip;</option>
+          <option value="Parent">Parent of a rower</option>
+          <option value="Rower">Current rower</option>
+          <option value="Alum">Alum</option>
+          <option value="Coach">Coach</option>
+          <option value="Volunteer">Volunteer</option>
+          <option value="Community member">Community member</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="story-quote">Why do you give? What has Green Lake Crew meant to you or your family?</label>
+        <textarea id="story-quote" name="quote" required></textarea>
+      </div>
+      <div class="form-field">
+        <label>How can we share this?</label>
+        <div class="checkbox-list">
+          <label><input type="radio" name="sharing" value="named" required> Share it publicly, with my name</label>
+          <label><input type="radio" name="sharing" value="anonymous" required> Share it publicly, but keep me anonymous</label>
+          <label><input type="radio" name="sharing" value="private" required> Keep it private, just for the FOGLC team</label>
+        </div>
+      </div>
+      <!-- honeypot field to deter simple bots -->
+      <div class="form-honeypot" aria-hidden="true">
+        <label for="story-company">Company</label>
+        <input type="text" id="story-company" name="company" tabindex="-1" autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-green">Share your story</button>
+      <div class="form-status" id="story-form-status"></div>
+    </form>
+
+    <p class="form-fallback">
+      Prefer email? Send your story directly to
+      <a href="mailto:REPLACE_ME@example.org?subject=Why%20I%20give%20to%20FOGLC">REPLACE_ME@example.org</a>
+      and let us know how we can share it.
+    </p>
+  </section>
+
+  <section>
+    <div class="cta-banner">
+      <h2>Ready to put your support behind it?</h2>
+      <p>Pick a cause that means something to you, or connect with our team to get more involved.</p>
+      <a class="btn btn-blue" href="support.html">Support the Rowing Community</a>
+      <a class="btn btn-outline" href="get-involved.html" style="margin-left: 0.75rem;">Get Involved</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p><strong>Friends of Green Lake Crew (FOGLC)</strong> &mdash; the volunteer booster community of Green Lake Crew.</p>
+  <p><a href="https://www.greenlakecrew.org/about-us/friends-of-green-lake-crew/">greenlakecrew.org</a> &middot; <a href="get-involved.html">Get in touch</a></p>
+</footer>
+
+<script src="assets/causes.js"></script>
+<script src="assets/payment.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/stories.js"></script>
+<script src="assets/site.js"></script>
+<script>
+  document.getElementById("story-form").addEventListener("submit", function (evt) {
+    var status = document.getElementById("story-form-status");
+    if (this.action.indexOf("REPLACE_WITH_FORM_ENDPOINT") !== -1) {
+      evt.preventDefault();
+      status.textContent = "This form isn't connected yet — please email us directly below, or ask FOGLC to finish setup.";
+      status.className = "form-status";
+    } else {
+      status.textContent = "Submitting...";
+      status.className = "form-status";
+    }
+  });
+</script>
+</body>
+</html>

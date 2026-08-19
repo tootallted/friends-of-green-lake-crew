@@ -550,3 +550,90 @@ footer {
 footer p { margin: 0.3rem 0; }
 footer a { color: var(--green-dark); font-weight: 600; text-decoration: none; }
 footer a:hover { text-decoration: underline; }
+
+/* Why We Give: stories */
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+@media (max-width: 640px) {
+  .story-grid { grid-template-columns: 1fr; }
+}
+.story-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--blue);
+  border-radius: 4px;
+  padding: 1.5rem 1.75rem;
+}
+.story-quote {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--fg);
+}
+.story-attribution {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.story-name {
+  font-weight: 700;
+  color: var(--green-dark);
+  font-size: 0.92rem;
+  font-style: normal;
+}
+.story-relation {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.story-empty {
+  background: var(--bg-alt);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  color: var(--muted);
+}
+.story-empty p { margin: 0 0 1rem; }
+.story-empty p:last-child { margin-bottom: 0; }
+.story-empty .story-empty-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--green-dark);
+  margin: 0 0 0.5rem;
+}
+
+/* Story submission form */
+.story-form textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+  resize: vertical;
+  min-height: 7rem;
+}
+.story-form textarea:focus { outline: none; border-color: var(--green); }
+.story-form select {
+  width: 100%;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+}
+.story-form select:focus { outline: none; border-color: var(--green); }
+.form-field .field-hint {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
