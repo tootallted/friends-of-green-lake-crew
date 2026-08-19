@@ -16,11 +16,19 @@
 <nav class="site-nav">
   <div class="nav-inner">
     <a class="brand" href="index.html">
-      <svg class="brand-mark" viewBox="0 0 40 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M20 2 L35 7.5 V19 C35 29 28.5 37.5 20 41.5 C11.5 37.5 5 29 5 19 V7.5 Z" fill="#16355c" stroke="#b3872c" stroke-width="1.5"/>
-        <rect x="17.2" y="8" width="5.6" height="16" rx="2.5" transform="rotate(25 20 16)" fill="#b3872c"/>
-        <rect x="17.2" y="8" width="5.6" height="16" rx="2.5" transform="rotate(-25 20 16)" fill="#b3872c" fill-opacity="0.85"/>
-        <path d="M9 25c4-2.5 8-2.5 11 0s7 2.5 11 0" stroke="#e8edf4" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <svg class="brand-mark" viewBox="0 0 100 116" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <clipPath id="shieldClip">
+            <path d="M50 4 L92 18 V58 C92 90 72 108 50 114 C28 108 8 90 8 58 V18 Z"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#shieldClip)">
+          <rect x="0" y="0" width="100" height="116" fill="#fdfcf8"/>
+          <path d="M8 18 L50 4 L60 4 L8 62 Z" fill="#55603e"/>
+          <rect x="-20" y="46" width="150" height="24" transform="rotate(-38 50 58)" fill="#8fc1de"/>
+        </g>
+        <path d="M50 4 L92 18 V58 C92 90 72 108 50 114 C28 108 8 90 8 58 V18 Z" fill="none" stroke="#1c2b45" stroke-width="4"/>
+        <text x="50" y="72" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="50" fill="#1c2b45">G</text>
       </svg>
       <span>
         Friends of Green Lake Crew
@@ -84,7 +92,7 @@
             <label for="company">Company</label>
             <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
           </div>
-          <button type="submit" class="btn btn-navy">Join the list</button>
+          <button type="submit" class="btn btn-green">Join the list</button>
           <div class="form-status" id="form-status"></div>
         </form>
 
