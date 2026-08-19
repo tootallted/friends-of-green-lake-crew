@@ -11,6 +11,11 @@
  */
 window.FOGLC_CAUSES = [
   {
+    id: "general-fund",
+    name: "General Fund",
+    blurb: "Give where it's needed most and let the program direct your gift to its top priority."
+  },
+  {
     id: "scholarship",
     name: "Scholarship",
     blurb: "Puts a seat in a boat for an athlete who couldn't otherwise afford one. No rower sits out because of cost."
