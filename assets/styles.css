@@ -6,12 +6,11 @@
   --muted: #665f4f;
   --card: #ffffff;
   --border: #e2dac7;
-  --green: #55603e;
-  --green-dark: #3a4429;
-  --green-light: #e8ead9;
-  --blue: #8fc1de;
-  --blue-dark: #3e7ea0;
-  --navy: #1c2b45;
+  --green: #324027;
+  --green-dark: #212a19;
+  --green-light: #e3e6dc;
+  --blue: #6ccce2;
+  --blue-dark: #2f8aa3;
   --danger: #b3401d;
   --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-body: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
@@ -69,8 +68,8 @@ a { color: var(--green); }
   font-size: 1.15rem;
 }
 .nav-inner .brand .brand-mark {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: auto;
+  height: 2.35rem;
   flex: none;
 }
 .nav-inner .brand .brand-sub {
@@ -113,7 +112,7 @@ header.page-hero::after {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   height: 42px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 15 0, 30 10 T 60 10 T 90 10 T 120 10 V20 H0 Z' fill='%2355603e' fill-opacity='0.12'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q 15 0, 30 10 T 60 10 T 90 10 T 120 10 V20 H0 Z' fill='%23324027' fill-opacity='0.12'/%3E%3C/svg%3E");
   background-size: 240px 42px;
   background-repeat: repeat-x;
 }
