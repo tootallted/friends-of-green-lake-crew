@@ -6,10 +6,10 @@
  * site goes live — sending real donors to a placeholder handle would
  * misdirect their gifts.
  *
- * These accounts are org-wide (PayPal/Venmo/Zelle don't support
- * per-cause sub-accounts). Whichever cause a visitor selects on the
- * Support page, we ask them to add it as a note/memo on the payment
- * so FOGLC's treasurer can route the gift correctly.
+ * These accounts are org-wide (PayPal/Venmo/Zelle/Givebutter don't
+ * support per-cause sub-accounts). Whichever cause a visitor selects
+ * on the Support page, we ask them to add it as a note/memo on the
+ * payment so FOGLC's treasurer can route the gift correctly.
  */
 window.FOGLC_PAYMENT = {
   paypal: {
@@ -29,6 +29,13 @@ window.FOGLC_PAYMENT = {
     label: "Zelle",
     // Zelle-registered email or phone number, e.g. "treasurer@greenlakecrew.org"
     handle: "REPLACE_ME@example.org",
+    configured: false
+  },
+  givebutter: {
+    label: "Givebutter",
+    // Full Givebutter campaign URL, e.g. "https://givebutter.com/FOGLC"
+    url: "https://givebutter.com/REPLACE_ME",
+    display: "givebutter.com/REPLACE_ME",
     configured: false
   }
 };

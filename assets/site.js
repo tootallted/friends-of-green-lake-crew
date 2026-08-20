@@ -119,6 +119,20 @@
       if (zelleHandleEl) zelleHandleEl.textContent = pay.zelle.handle;
     }
 
+    if (pay.givebutter) {
+      var givebutterLink = document.getElementById("givebutter-pay-btn");
+      var givebutterHandle = document.getElementById("givebutter-handle");
+      if (givebutterHandle) givebutterHandle.textContent = pay.givebutter.display;
+      if (givebutterLink) {
+        if (!pay.givebutter.configured) {
+          givebutterLink.setAttribute("disabled", "disabled");
+          givebutterLink.removeAttribute("href");
+        } else {
+          givebutterLink.href = pay.givebutter.url;
+        }
+      }
+    }
+
     document.querySelectorAll(".setup-flag[data-if-unconfigured]").forEach(function (flag) {
       var key = flag.getAttribute("data-if-unconfigured");
       if (pay[key] && pay[key].configured) {

@@ -367,10 +367,10 @@ section > p.section-lede {
 
 .pay-methods {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
 }
-@media (max-width: 700px) {
+@media (max-width: 560px) {
   .pay-methods { grid-template-columns: 1fr; }
 }
 .pay-method {
