@@ -67,14 +67,24 @@
     </p>
 
     <!--
-      ACTION NEEDED BEFORE LAUNCH: this form's `action` is a placeholder.
-      Point it at a real form backend (Google Forms, Formspree, etc.) so
-      submissions actually reach FOGLC. Until then, use the "email us
-      directly" fallback below. Submitted stories do NOT appear on this
-      page automatically — add them to assets/stories.js once you have
-      the storyteller's OK on how to credit them.
+      This form sends to FormSubmit.co, a no-signup static-form-to-email
+      relay, which forwards submissions to tootallted@gmail.com. ONE-TIME
+      SETUP STEP: FormSubmit requires the destination email to confirm
+      the very first submission via a link it emails — until that link
+      is clicked, submissions before it are held/dropped rather than
+      delivered. Submitted stories do NOT appear on this page
+      automatically — add them to assets/stories.js once you have the
+      storyteller's OK on how to credit them.
     -->
-    <form class="mail-form story-form" id="story-form" action="https://REPLACE_WITH_FORM_ENDPOINT" method="POST">
+    <div class="story-success" id="story-success" style="display: none;">
+      <p class="story-success-title">Thank you for sharing your story!</p>
+      <p>It's on its way to the FOGLC team. If you opted to share it publicly, we'll add it to this page soon.</p>
+    </div>
+    <form class="mail-form story-form" id="story-form" action="https://formsubmit.co/tootallted@gmail.com" method="POST">
+      <input type="hidden" name="_subject" value="New FOGLC &quot;Why We Give&quot; story">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" value="https://tootallted.github.io/friends-of-green-lake-crew/why-we-give.html?submitted=true#share-your-why">
       <div class="form-field">
         <label for="story-name">Name</label>
         <input type="text" id="story-name" name="name" required>
@@ -109,10 +119,10 @@
           <label><input type="radio" name="sharing" value="private" required> Keep it private, just for the FOGLC team</label>
         </div>
       </div>
-      <!-- honeypot field to deter simple bots -->
+      <!-- honeypot field FormSubmit recognizes for spam filtering -->
       <div class="form-honeypot" aria-hidden="true">
-        <label for="story-company">Company</label>
-        <input type="text" id="story-company" name="company" tabindex="-1" autocomplete="off">
+        <label for="story-honey">Company</label>
+        <input type="text" id="story-honey" name="_honey" tabindex="-1" autocomplete="off">
       </div>
       <button type="submit" class="btn btn-green">Share your story</button>
       <div class="form-status" id="story-form-status"></div>
@@ -147,17 +157,18 @@
 <script src="assets/stories.js"></script>
 <script src="assets/site.js"></script>
 <script>
-  document.getElementById("story-form").addEventListener("submit", function (evt) {
+  document.getElementById("story-form").addEventListener("submit", function () {
     var status = document.getElementById("story-form-status");
-    if (this.action.indexOf("REPLACE_WITH_FORM_ENDPOINT") !== -1) {
-      evt.preventDefault();
-      status.textContent = "This form isn't connected yet — please email us directly below, or ask FOGLC to finish setup.";
-      status.className = "form-status";
-    } else {
-      status.textContent = "Submitting...";
-      status.className = "form-status";
-    }
+    status.textContent = "Submitting...";
+    status.className = "form-status";
   });
+
+  if (new URLSearchParams(window.location.search).get("submitted") === "true") {
+    var successEl = document.getElementById("story-success");
+    var formEl = document.getElementById("story-form");
+    if (successEl) successEl.style.display = "block";
+    if (formEl) formEl.style.display = "none";
+  }
 </script>
 </body>
 </html>

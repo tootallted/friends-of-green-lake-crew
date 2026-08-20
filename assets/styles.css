@@ -609,6 +609,22 @@ footer a:hover { text-decoration: underline; }
   margin: 0 0 0.5rem;
 }
 
+.story-success {
+  background: var(--green-light);
+  border: 1px solid #cddccb;
+  border-radius: 4px;
+  padding: 2rem 2rem;
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+.story-success p { margin: 0 0 0.5rem; color: var(--green-dark); }
+.story-success p:last-child { margin-bottom: 0; }
+.story-success .story-success-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
 /* Story submission form */
 .story-form textarea {
   width: 100%;
