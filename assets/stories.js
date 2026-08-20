@@ -16,6 +16,8 @@
  *   relation - their connection to the program (e.g. "Parent of a novice rower", "Alum, class of 2014")
  */
 window.FOGLC_STORIES = [
-  // No stories yet — this list starts empty on purpose.
-  // Add real ones here as they come in from the form below.
+  {
+    quote: "Rowing helped my son become the person he is today, and I support Green Lake because it became so much more than an activity for him.",
+    name: "A Green Lake Parent"
+  }
 ];
