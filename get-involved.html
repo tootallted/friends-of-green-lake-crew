@@ -52,12 +52,22 @@
         </p>
 
         <!--
-          ACTION NEEDED BEFORE LAUNCH: this form's `action` is a placeholder.
-          Point it at a real form backend (Google Forms, Mailchimp signup,
-          Formspree, etc.) so submissions actually reach FOGLC. Until then,
-          use the "email us directly" fallback below.
+          This form sends to FormSubmit.co, a no-signup static-form-to-email
+          relay, which forwards submissions to tootallted@gmail.com.
+          ONE-TIME SETUP STEP: FormSubmit requires the destination email to
+          confirm the very first submission via a link it emails — until
+          that link is clicked, submissions before it are held/dropped
+          rather than delivered.
         -->
-        <form class="mail-form" id="mailing-list-form" action="https://REPLACE_WITH_FORM_ENDPOINT" method="POST">
+        <div class="story-success" id="mailing-list-success" style="display: none;">
+          <p class="story-success-title">You're on the list!</p>
+          <p>Thanks for joining — watch your inbox for updates from FOGLC.</p>
+        </div>
+        <form class="mail-form" id="mailing-list-form" action="https://formsubmit.co/tootallted@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="New FOGLC mailing list signup">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="_next" value="https://tootallted.github.io/friends-of-green-lake-crew/get-involved.html?submitted=true">
           <div class="form-field">
             <label for="name">Name</label>
             <input type="text" id="name" name="name" required>
@@ -75,10 +85,10 @@
               <label><input type="checkbox" name="interest" value="launchhouse"> Launch House Campaign</label>
             </div>
           </div>
-          <!-- honeypot field to deter simple bots -->
+          <!-- honeypot field FormSubmit recognizes for spam filtering -->
           <div class="form-honeypot" aria-hidden="true">
             <label for="company">Company</label>
-            <input type="text" id="company" name="company" tabindex="-1" autocomplete="off">
+            <input type="text" id="company" name="_honey" tabindex="-1" autocomplete="off">
           </div>
           <button type="submit" class="btn btn-green">Join the list</button>
           <div class="form-status" id="form-status"></div>
@@ -114,17 +124,18 @@
 <script src="assets/team.js"></script>
 <script src="assets/site.js"></script>
 <script>
-  document.getElementById("mailing-list-form").addEventListener("submit", function (evt) {
+  document.getElementById("mailing-list-form").addEventListener("submit", function () {
     var status = document.getElementById("form-status");
-    if (this.action.indexOf("REPLACE_WITH_FORM_ENDPOINT") !== -1) {
-      evt.preventDefault();
-      status.textContent = "This form isn't connected yet — please email us directly below, or ask FOGLC to finish setup.";
-      status.className = "form-status";
-    } else {
-      status.textContent = "Submitting...";
-      status.className = "form-status";
-    }
+    status.textContent = "Submitting...";
+    status.className = "form-status";
   });
+
+  if (new URLSearchParams(window.location.search).get("submitted") === "true") {
+    var successEl = document.getElementById("mailing-list-success");
+    var formEl = document.getElementById("mailing-list-form");
+    if (successEl) successEl.style.display = "block";
+    if (formEl) formEl.style.display = "none";
+  }
 </script>
 </body>
 </html>
