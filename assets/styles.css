@@ -494,6 +494,16 @@ section > p.section-lede {
   color: var(--muted);
 }
 
+.fee-note {
+  margin: 1.5rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--border);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.fee-note strong { color: var(--green-dark); }
+
 /* RAC exec team */
 .team-list {
   display: flex;
