@@ -16,8 +16,8 @@ window.FOGLC_CAUSES = [
     blurb: "Give where it's needed most and let the program direct your gift to its top priority."
   },
   {
-    id: "scholarship",
-    name: "Scholarship",
+    id: "financial-aid",
+    name: "Financial Aid",
     blurb: "Puts a seat in a boat for an athlete who couldn't otherwise afford one. No rower sits out because of cost."
   },
   {
