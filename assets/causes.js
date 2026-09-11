@@ -16,33 +16,13 @@ window.FOGLC_CAUSES = [
     blurb: "Give where it's needed most and let the program direct your gift to its top priority."
   },
   {
-    id: "financial-aid",
-    name: "Financial Aid",
-    blurb: "Puts a seat in a boat for an athlete who couldn't otherwise afford one. No rower sits out because of cost."
-  },
-  {
     id: "equipment",
     name: "Equipment",
     blurb: "Boats, oars, riggers, and safety gear — the fleet that keeps every practice and race possible."
   },
   {
-    id: "coaches-training",
-    name: "Coaches' Training",
-    blurb: "Certifications, safety training, and professional development for the coaches our rowers trust."
-  },
-  {
-    id: "stem-to-stern",
-    name: "Stem to Stern",
-    blurb: "Full-boat restoration and upkeep — from bow ball to stern deck — so the fleet lasts for seasons to come."
-  },
-  {
-    id: "adaptive-rowing",
-    name: "Adaptive Rowing",
-    blurb: "Adaptive equipment and trained coaching so rowers of every ability can get on the water and race."
-  },
-  {
-    id: "launchhouse",
-    name: "Launch House Campaign",
-    blurb: "Building the program's future home on Green Lake — a launch house for the next generation of rowers."
+    id: "financial-aid",
+    name: "Financial Aid",
+    blurb: "Puts a seat in a boat for an athlete who couldn't otherwise afford one. No rower sits out because of cost."
   }
 ];

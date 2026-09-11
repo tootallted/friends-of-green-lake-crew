@@ -98,6 +98,18 @@ a { color: var(--green); }
   color: var(--green-dark);
   border-bottom-color: var(--blue);
 }
+.nav-links a.nav-cta {
+  background: var(--blue);
+  color: var(--green-dark);
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border-bottom-color: transparent;
+}
+.nav-links a.nav-cta:hover {
+  background: var(--blue-dark);
+  color: #fff;
+  border-bottom-color: transparent;
+}
 
 /* Hero / page header */
 header.page-hero {
