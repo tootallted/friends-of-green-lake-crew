@@ -52,21 +52,7 @@
     var noteText = "FOGLC – " + cause.name;
     if (noteEl) {
       noteEl.textContent =
-        'Add this note to your payment so it reaches the right fund: "' + noteText + '"';
-    }
-
-    var pay = window.FOGLC_PAYMENT || {};
-
-    var venmoBtn = document.getElementById("venmo-pay-btn");
-    if (venmoBtn && pay.venmo) {
-      if (pay.venmo.configured) {
-        var handle = (pay.venmo.handle || "").replace(/^@/, "");
-        venmoBtn.href =
-          "https://venmo.com/" + encodeURIComponent(handle) +
-          "?txn=pay&note=" + encodeURIComponent(noteText);
-      } else {
-        venmoBtn.removeAttribute("href");
-      }
+        'Add this as a comment on your Givebutter donation so it reaches the right fund: "' + noteText + '"';
     }
   }
 
@@ -90,34 +76,6 @@
   function initPaymentPanel() {
     var pay = window.FOGLC_PAYMENT;
     if (!pay) return;
-
-    if (pay.paypal) {
-      var paypalLink = document.getElementById("paypal-pay-btn");
-      var paypalHandle = document.getElementById("paypal-handle");
-      if (paypalHandle) paypalHandle.textContent = pay.paypal.display;
-      if (paypalLink) {
-        if (!pay.paypal.configured) {
-          paypalLink.setAttribute("disabled", "disabled");
-          paypalLink.removeAttribute("href");
-        } else {
-          paypalLink.href = pay.paypal.url;
-        }
-      }
-    }
-
-    if (pay.venmo) {
-      var venmoHandleEl = document.getElementById("venmo-handle");
-      if (venmoHandleEl) venmoHandleEl.textContent = pay.venmo.handle;
-      var venmoBtn = document.getElementById("venmo-pay-btn");
-      if (venmoBtn && !pay.venmo.configured) {
-        venmoBtn.setAttribute("disabled", "disabled");
-      }
-    }
-
-    if (pay.zelle) {
-      var zelleHandleEl = document.getElementById("zelle-handle");
-      if (zelleHandleEl) zelleHandleEl.textContent = pay.zelle.handle;
-    }
 
     if (pay.givebutter) {
       var givebutterLink = document.getElementById("givebutter-pay-btn");
