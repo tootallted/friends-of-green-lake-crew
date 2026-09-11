@@ -82,6 +82,7 @@ a { color: var(--green); }
 }
 .nav-links {
   display: flex;
+  align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
 }
@@ -99,15 +100,16 @@ a { color: var(--green); }
   border-bottom-color: var(--blue);
 }
 .nav-links a.nav-cta {
-  background: var(--blue);
+  background: rgba(108, 204, 226, 0.22);
   color: var(--green-dark);
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  margin: -0.25rem -0.6rem;
+  border-radius: 6px;
   border-bottom-color: transparent;
 }
 .nav-links a.nav-cta:hover {
-  background: var(--blue-dark);
-  color: #fff;
+  background: rgba(108, 204, 226, 0.4);
+  color: var(--green-dark);
   border-bottom-color: transparent;
 }
 
