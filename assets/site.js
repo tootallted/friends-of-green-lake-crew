@@ -1,6 +1,6 @@
 // Friends of Green Lake Crew — shared page behavior.
-// Renders the cause picker + give panel from causes.js / payment.js,
-// and the RAC exec team roster from team.js.
+// Renders the cause list from causes.js, wires up the Givebutter
+// donation links from payment.js, and the RAC exec team roster from team.js.
 
 (function () {
   function el(tag, className, html) {
@@ -10,91 +10,29 @@
     return e;
   }
 
-  function initCausePicker() {
+  function initCauseList() {
     var grid = document.getElementById("cause-grid");
-    var panel = document.getElementById("give-panel");
-    if (!grid || !panel || !window.FOGLC_CAUSES) return;
+    if (!grid || !window.FOGLC_CAUSES) return;
 
-    var causes = window.FOGLC_CAUSES;
-
-    causes.forEach(function (cause, i) {
-      var wrap = el("div", "cause-card");
-      var input = document.createElement("input");
-      input.type = "radio";
-      input.name = "cause";
-      input.id = "cause-" + cause.id;
-      input.value = cause.id;
-      if (i === 0) input.checked = true;
-
-      var label = document.createElement("label");
-      label.setAttribute("for", "cause-" + cause.id);
-      label.innerHTML =
-        '<span class="cause-name">' + cause.name + '<span class="cause-check"></span></span>' +
+    window.FOGLC_CAUSES.forEach(function (cause) {
+      var card = el("div", "cause-card");
+      card.innerHTML =
+        '<p class="cause-name">' + cause.name + "</p>" +
         '<p class="cause-blurb">' + cause.blurb + "</p>";
-
-      wrap.appendChild(input);
-      wrap.appendChild(label);
-      grid.appendChild(wrap);
-
-      input.addEventListener("change", function () {
-        if (input.checked) updateGivePanel(cause);
-      });
-    });
-
-    updateGivePanel(causes[0]);
-  }
-
-  function updateGivePanel(cause) {
-    var selectedEl = document.getElementById("give-selected-cause");
-    if (selectedEl) selectedEl.textContent = cause.name;
-
-    var noteEl = document.getElementById("give-note-text");
-    var noteText = "FOGLC – " + cause.name;
-    if (noteEl) {
-      noteEl.textContent =
-        'Add this as a comment on your Givebutter donation so it reaches the right fund: "' + noteText + '"';
-    }
-  }
-
-  function initCopyButtons() {
-    document.querySelectorAll("[data-copy]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var text = btn.getAttribute("data-copy");
-        var feedback = btn.parentElement.querySelector(".copy-feedback");
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(function () {
-            if (feedback) {
-              feedback.textContent = "Copied!";
-              setTimeout(function () { feedback.textContent = ""; }, 1800);
-            }
-          });
-        }
-      });
+      grid.appendChild(card);
     });
   }
 
-  function initPaymentPanel() {
+  function initGivebutterLinks() {
     var pay = window.FOGLC_PAYMENT;
-    if (!pay) return;
+    if (!pay || !pay.givebutter) return;
 
-    if (pay.givebutter) {
-      var givebutterLink = document.getElementById("givebutter-pay-btn");
-      var givebutterHandle = document.getElementById("givebutter-handle");
-      if (givebutterHandle) givebutterHandle.textContent = pay.givebutter.display;
-      if (givebutterLink) {
-        if (!pay.givebutter.configured) {
-          givebutterLink.setAttribute("disabled", "disabled");
-          givebutterLink.removeAttribute("href");
-        } else {
-          givebutterLink.href = pay.givebutter.url;
-        }
-      }
-    }
-
-    document.querySelectorAll(".setup-flag[data-if-unconfigured]").forEach(function (flag) {
-      var key = flag.getAttribute("data-if-unconfigured");
-      if (pay[key] && pay[key].configured) {
-        flag.style.display = "none";
+    document.querySelectorAll("[data-givebutter-link]").forEach(function (link) {
+      if (pay.givebutter.configured) {
+        link.href = pay.givebutter.url;
+      } else {
+        link.setAttribute("disabled", "disabled");
+        link.removeAttribute("href");
       }
     });
   }
@@ -150,9 +88,8 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    initCausePicker();
-    initPaymentPanel();
-    initCopyButtons();
+    initCauseList();
+    initGivebutterLinks();
     initTeamRoster();
     initStories();
   });
