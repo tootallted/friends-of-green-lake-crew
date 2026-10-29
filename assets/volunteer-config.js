@@ -9,7 +9,7 @@
  * to the URL.
  */
 window.FOGLC_VOLUNTEER = {
-  apiUrl: "REPLACE_WITH_APPS_SCRIPT_EXEC_URL",
-  configured: false,
+  apiUrl: "https://script.google.com/macros/s/AKfycbzFnX-VMKz8jfCfJ7njMI-SpgPDDqOm8ZjdtOznUI9OElakfz-DKMqLihAlZ_R27j_EwQ/exec",
+  configured: true,
   contactEmail: "tootallted@gmail.com"
 };
