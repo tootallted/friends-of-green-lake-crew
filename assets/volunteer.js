@@ -9,7 +9,11 @@
   var api = demo ? demoApi() : liveApi();
   var STORE_KEY = "foglc-volunteer-info";
 
-  var state = { slots: [], byId: {}, selected: {}, mine: [], lookedUp: "" };
+  var state = {
+    slots: [], byId: {}, selected: {}, mine: [], lookedUp: "",
+    // ?role=Concessions pre-filters the list, so organizers can link to one job.
+    role: new URLSearchParams(window.location.search).get("role") || ""
+  };
   var $ = function (id) { return document.getElementById(id); };
 
   function esc(s) {
@@ -105,6 +109,7 @@
     if (!state.slots.length) {
       list.innerHTML = '<div class="story-empty"><p class="story-empty-title">No open slots right now</p>' +
         "<p>Check back soon &mdash; new volunteer slots are added as events come up.</p></div>";
+      renderRoleFilter();
       updateBar();
       return;
     }
@@ -113,8 +118,8 @@
     var lastDay = null;
     state.slots.forEach(function (s) {
       if (s.dateKey !== lastDay) {
-        if (lastDay !== null) html += "</div>";
-        html += '<h3 class="slot-day">' + esc(s.dateLabel) + '</h3><div class="slot-group">';
+        if (lastDay !== null) html += "</div></div>";
+        html += '<div class="slot-day-block"><h3 class="slot-day">' + esc(s.dateLabel) + '</h3><div class="slot-group">';
         lastDay = s.dateKey;
       }
       var meta = [s.location, s.description].filter(Boolean).map(esc).join(" &middot; ");
@@ -129,9 +134,55 @@
         '<span class="slot-spots"></span>' +
         "</label>";
     });
-    html += "</div>";
+    html += "</div></div>";
     list.innerHTML = html;
+    renderRoleFilter();
     refreshSlots();
+  }
+
+  /* ---------- Role filter ---------- */
+
+  function renderRoleFilter() {
+    var bar = $("role-filter");
+    var roles = [];
+    var counts = {};
+    state.slots.forEach(function (s) {
+      if (!counts[s.role]) roles.push(s.role);
+      counts[s.role] = (counts[s.role] || 0) + 1;
+    });
+    roles.sort(function (a, b) { return a.localeCompare(b); });
+    // Match a ?role= link case-insensitively; drop a filter whose role is gone.
+    state.role = roles.filter(function (r) { return r.toLowerCase() === state.role.toLowerCase(); })[0] || "";
+
+    if (roles.length < 2) {
+      bar.style.display = "none";
+      bar.innerHTML = "";
+      state.role = "";
+      return;
+    }
+    function chip(value, label, count) {
+      return '<button type="button" class="role-chip" data-role="' + esc(value) + '" aria-pressed="false">' +
+        esc(label) + ' <span class="role-chip-count">' + count + "</span></button>";
+    }
+    bar.innerHTML = '<span class="role-filter-label" id="role-filter-label">Filter by role</span>' +
+      '<div class="role-chips" role="group" aria-labelledby="role-filter-label">' +
+      chip("", "All roles", state.slots.length) +
+      roles.map(function (r) { return chip(r, r, counts[r]); }).join("") +
+      "</div>";
+    bar.style.display = "block";
+  }
+
+  function applyRoleFilter() {
+    document.querySelectorAll("#role-filter .role-chip").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-role") === state.role));
+    });
+    document.querySelectorAll("#slot-list .slot").forEach(function (row) {
+      var s = state.byId[row.getAttribute("data-id")];
+      row.hidden = !!state.role && s.role !== state.role;
+    });
+    document.querySelectorAll("#slot-list .slot-day-block").forEach(function (block) {
+      block.hidden = !block.querySelector(".slot:not([hidden])");
+    });
   }
 
   // Update each slot's checked/disabled state in place so keyboard focus survives.
@@ -177,6 +228,7 @@
     } else {
       mineNote.style.display = "none";
     }
+    applyRoleFilter();
     updateBar();
   }
 
@@ -323,6 +375,12 @@
       else delete state.selected[e.target.value];
       showError("");
       refreshSlots();
+    });
+    $("role-filter").addEventListener("click", function (e) {
+      var chip = e.target.closest(".role-chip");
+      if (!chip) return;
+      state.role = chip.getAttribute("data-role");
+      applyRoleFilter();
     });
     $("email").addEventListener("change", lookupMine);
     $("phone").addEventListener("input", checkPhone);
