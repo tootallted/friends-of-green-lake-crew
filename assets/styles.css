@@ -756,3 +756,27 @@ footer a:hover { text-decoration: underline; }
 .role-chip[aria-pressed="true"] .role-chip-count { background: rgba(255, 255, 255, 0.22); }
 .slot-list > .slot-day-block:not([hidden]) ~ .slot-day-block .slot-day { margin-top: 1.75rem; }
 .slot[hidden], .slot-day-block[hidden] { display: none; }
+.fill-summary {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.8rem 1rem 0.9rem;
+  margin-bottom: 1rem;
+}
+.fill-summary-text { margin: 0 0 0.5rem; color: var(--green-dark); }
+.fill-summary-text strong { font-size: 1.1rem; }
+.fill-open { color: var(--muted); font-size: 0.9rem; }
+.fill-meter {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--green-light);
+  overflow: hidden;
+}
+.fill-meter span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--green);
+  border-radius: inherit;
+  transition: width 0.3s;
+}

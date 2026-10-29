@@ -142,33 +142,49 @@
 
   /* ---------- Role filter ---------- */
 
+  // Filled/total spots across a set of slots (a slot over capacity counts as full).
+  function tally(slots) {
+    return slots.reduce(function (t, s) {
+      t.filled += Math.min(s.filled || 0, s.capacity);
+      t.total += s.capacity;
+      return t;
+    }, { filled: 0, total: 0 });
+  }
+
   function renderRoleFilter() {
     var bar = $("role-filter");
     var roles = [];
-    var counts = {};
+    var byRole = {};
     state.slots.forEach(function (s) {
-      if (!counts[s.role]) roles.push(s.role);
-      counts[s.role] = (counts[s.role] || 0) + 1;
+      if (!byRole[s.role]) { byRole[s.role] = []; roles.push(s.role); }
+      byRole[s.role].push(s);
     });
     roles.sort(function (a, b) { return a.localeCompare(b); });
     // Match a ?role= link case-insensitively; drop a filter whose role is gone.
     state.role = roles.filter(function (r) { return r.toLowerCase() === state.role.toLowerCase(); })[0] || "";
+    state.tallies = { "": tally(state.slots) };
+    roles.forEach(function (r) { state.tallies[r] = tally(byRole[r]); });
 
-    if (roles.length < 2) {
+    if (!state.slots.length) {
       bar.style.display = "none";
       bar.innerHTML = "";
-      state.role = "";
       return;
     }
-    function chip(value, label, count) {
-      return '<button type="button" class="role-chip" data-role="' + esc(value) + '" aria-pressed="false">' +
-        esc(label) + ' <span class="role-chip-count">' + count + "</span></button>";
+    function chip(value, label) {
+      var t = state.tallies[value];
+      return '<button type="button" class="role-chip" data-role="' + esc(value) + '" aria-pressed="false"' +
+        ' aria-label="' + esc(label) + ": " + t.filled + " of " + t.total + ' spots filled">' +
+        esc(label) + ' <span class="role-chip-count">' + t.filled + "/" + t.total + "</span></button>";
     }
-    bar.innerHTML = '<span class="role-filter-label" id="role-filter-label">Filter by role</span>' +
-      '<div class="role-chips" role="group" aria-labelledby="role-filter-label">' +
-      chip("", "All roles", state.slots.length) +
-      roles.map(function (r) { return chip(r, r, counts[r]); }).join("") +
-      "</div>";
+    bar.innerHTML =
+      '<div class="fill-summary"><p class="fill-summary-text" id="fill-summary-text" aria-live="polite"></p>' +
+      '<div class="fill-meter" aria-hidden="true"><span id="fill-meter-bar"></span></div></div>' +
+      (roles.length < 2 ? "" :
+        '<span class="role-filter-label" id="role-filter-label">Filter by role &middot; spots filled</span>' +
+        '<div class="role-chips" role="group" aria-labelledby="role-filter-label">' +
+        chip("", "All roles") +
+        roles.map(function (r) { return chip(r, r); }).join("") +
+        "</div>");
     bar.style.display = "block";
   }
 
@@ -183,6 +199,13 @@
     document.querySelectorAll("#slot-list .slot-day-block").forEach(function (block) {
       block.hidden = !block.querySelector(".slot:not([hidden])");
     });
+
+    var t = state.tallies && state.tallies[state.role];
+    if (!t || !$("fill-summary-text")) return;
+    $("fill-summary-text").innerHTML = "<strong>" + t.filled + " of " + t.total + "</strong> " +
+      (state.role ? esc(state.role) + " " : "") + (t.total === 1 ? "spot" : "spots") + " filled" +
+      (t.total > t.filled ? ' <span class="fill-open">&middot; ' + (t.total - t.filled) + " still open</span>" : "");
+    $("fill-meter-bar").style.width = (t.total ? Math.round(100 * t.filled / t.total) : 0) + "%";
   }
 
   // Update each slot's checked/disabled state in place so keyboard focus survives.
