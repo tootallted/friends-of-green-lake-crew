@@ -9,6 +9,8 @@
  *   slots       one row per job/shift that needs people
  *   volunteers  one row per person (upserted by email)
  *   signups     one row per person-in-a-slot (links slot_id + volunteer_id/email)
+ *   Newsletter Subscribers   one row per email from the Get Involved page's
+ *               mailing-list form (upserted by email; interests are merged)
  *
  * Column headers are matched loosely (case, spaces and underscores ignored),
  * so "Slot ID", "slot_id" and "slotid" all work. See SCHEMA below for the
@@ -40,6 +42,8 @@ var CONFIG = {
   ORG_NAME: 'Friends of Green Lake Crew',
   SIGNUP_PAGE_URL: 'https://tootallted.github.io/friends-of-green-lake-crew/volunteer/',
   SEND_CONFIRMATION_EMAIL: true,
+  // Who gets an email for each new mailing-list subscriber ('' to turn off).
+  SUBSCRIBER_NOTIFY_EMAIL: 'tootallted@gmail.com',
   HIDE_PAST_SLOTS: true,
   DEFAULT_SLOT_MINUTES: 60 // used when a slot has a start time but no end time
 };
@@ -76,14 +80,30 @@ var SCHEMA = {
     when: ['slot_time', 'when', 'time'],
     status: ['status'],
     created: ['created_at', 'created', 'timestamp', 'signed_up_at']
+  },
+  subscribers: {
+    email: ['email', 'email_address', 'emailaddress'],
+    name: ['name', 'full_name'],
+    interests: ['interests', 'interested_in', 'interest'],
+    created: ['subscribed_at', 'created_at', 'created', 'timestamp', 'date_added'],
+    updated: ['updated_at', 'updated', 'last_updated']
   }
+};
+
+// Sheet tab for each table; tab names are matched ignoring case and spaces.
+var TAB_NAMES = {
+  slots: 'slots',
+  volunteers: 'volunteers',
+  signups: 'signups',
+  subscribers: 'Newsletter Subscribers'
 };
 
 // Columns the script itself writes; added to the sheet if missing.
 var WRITES = {
   slots: ['id', 'role', 'date', 'start', 'end', 'capacity', 'location', 'description'],
   volunteers: ['id', 'first', 'last', 'email', 'phone', 'created', 'updated'],
-  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'created']
+  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'created'],
+  subscribers: ['email', 'name', 'interests', 'created', 'updated']
 };
 
 /* ---------- Web app entry points ---------- */
@@ -107,6 +127,7 @@ function doPost(e) {
   try {
     if (body.action === 'lookup') return json_(lookup_(body));
     if (body.action === 'signup') return json_(signup_(body));
+    if (body.action === 'subscribe') return json_(subscribe_(body));
     return json_({ ok: false, error: 'Unknown action.' });
   } catch (err) {
     return json_({ ok: false, error: 'Something went wrong: ' + err.message });
@@ -120,6 +141,58 @@ function lookup_(body) {
   if (!isEmail_(email)) return { ok: true, mySlotIds: [] };
   var ss = openSheet_();
   return { ok: true, mySlotIds: activeSignups_(ss).filter(function (s) { return s.email === email; }).map(function (s) { return s.slotId; }) };
+}
+
+// Mailing-list signup from the Get Involved page. One row per email; a repeat
+// signup updates the name and adds any new interests.
+function subscribe_(body) {
+  if (body.website) return { ok: true };
+
+  var email = normEmail_(body.email);
+  var name = clean_(body.name, 120);
+  var interests = (Array.isArray(body.interests) ? body.interests : [])
+    .map(function (i) { return clean_(i, 80); }).filter(Boolean).filter(unique_).slice(0, 20);
+  if (!isEmail_(email)) return fail_('Please enter a valid email address.');
+  if (!name) return fail_('Please enter your name.');
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return fail_('The sign-up sheet is busy. Please try again in a moment.');
+  var isNew = true;
+  try {
+    var t = table_(openSheet_(), 'subscribers');
+    var now = new Date();
+    for (var i = 0; i < t.rows.length; i++) {
+      if (normEmail_(cell_(t, t.rows[i], 'email')) !== email) continue;
+      var had = String(cell_(t, t.rows[i], 'interests')).split(',')
+        .map(function (x) { return x.trim(); }).filter(Boolean);
+      var merged = had.concat(interests).filter(unique_);
+      t.sheet.getRange(i + 2, t.col.name + 1).setValue(name);
+      t.sheet.getRange(i + 2, t.col.interests + 1).setValue(merged.join(', '));
+      t.sheet.getRange(i + 2, t.col.updated + 1).setValue(now);
+      isNew = false;
+      break;
+    }
+    if (isNew) {
+      t.sheet.appendRow(rowFor_(t, { email: email, name: name, interests: interests.join(', '), created: now, updated: now }));
+    }
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+
+  if (isNew && CONFIG.SUBSCRIBER_NOTIFY_EMAIL) {
+    try {
+      MailApp.sendEmail({
+        to: CONFIG.SUBSCRIBER_NOTIFY_EMAIL,
+        name: CONFIG.ORG_NAME,
+        replyTo: email,
+        subject: 'New FOGLC mailing list signup: ' + name,
+        htmlBody: '<p><strong>' + esc_(name) + '</strong> (' + esc_(email) + ') joined the mailing list.</p>' +
+          '<p>Interested in: ' + esc_(interests.join(', ') || '—') + '</p>'
+      });
+    } catch (err) { console.warn('Notify failed: ' + err.message); }
+  }
+  return { ok: true, isNew: isNew };
 }
 
 function signup_(body) {
@@ -211,8 +284,9 @@ function norm_(s) {
 // Returns { sheet, width, col: {field: index}, rows, display } for a tab.
 function table_(ss, name) {
   var schema = SCHEMA[name];
-  var sheet = ss.getSheets().filter(function (s) { return norm_(s.getName()) === name; })[0];
-  if (!sheet) sheet = ss.insertSheet(name);
+  var tab = TAB_NAMES[name];
+  var sheet = ss.getSheets().filter(function (s) { return norm_(s.getName()) === norm_(tab); })[0];
+  if (!sheet) sheet = ss.insertSheet(tab);
 
   var lastCol = Math.max(sheet.getLastColumn(), 1);
   var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -564,7 +638,7 @@ function onOpen() {
 // and fills in IDs for any slots that don't have one.
 function setup() {
   var ss = openSheet_();
-  ['slots', 'volunteers', 'signups'].forEach(function (name) { table_(ss, name); });
+  ['slots', 'volunteers', 'signups', 'subscribers'].forEach(function (name) { table_(ss, name); });
   var slots = readSlots_(ss);
   console.log('Ready. ' + slots.length + ' slot(s) found, ' + slots.filter(function (s) { return s.visible; }).length + ' visible.');
 }
