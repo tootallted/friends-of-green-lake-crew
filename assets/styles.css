@@ -365,6 +365,7 @@ section > p.section-lede {
 .form-honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .form-status { margin-top: 1rem; font-size: 0.9rem; }
 .form-status.is-success { color: var(--green-dark); }
+.form-status.is-error { color: var(--danger); }
 .form-fallback {
   margin-top: 1.25rem;
   padding-top: 1.25rem;

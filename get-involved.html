@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=8">
+<link rel="stylesheet" href="assets/styles.css?v=11">
 </head>
 <body>
 
@@ -53,29 +53,22 @@
         </p>
 
         <!--
-          This form sends to FormSubmit.co, a no-signup static-form-to-email
-          relay, which forwards submissions to tootallted@gmail.com.
-          ONE-TIME SETUP STEP: FormSubmit requires the destination email to
-          confirm the very first submission via a link it emails — until
-          that link is clicked, submissions before it are held/dropped
-          rather than delivered.
+          This form posts to the Apps Script web app (apps-script/volunteer.gs,
+          URL in assets/volunteer-config.js), which logs each subscriber to the
+          "Newsletter Subscribers" tab of the volunteer Google Sheet.
         -->
-        <div class="story-success" id="mailing-list-success" style="display: none;">
+        <div class="story-success" id="mailing-list-success" style="display: none;" role="status">
           <p class="story-success-title">You're on the list!</p>
           <p>Thanks for joining — watch your inbox for updates from FOGLC.</p>
         </div>
-        <form class="mail-form" id="mailing-list-form" action="https://formsubmit.co/tootallted@gmail.com" method="POST">
-          <input type="hidden" name="_subject" value="New FOGLC mailing list signup">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_captcha" value="false">
-          <input type="hidden" name="_next" value="https://tootallted.github.io/friends-of-green-lake-crew/get-involved.html?submitted=true">
+        <form class="mail-form" id="mailing-list-form" novalidate>
           <div class="form-field">
             <label for="name">Name</label>
-            <input type="text" id="name" name="name" required>
+            <input type="text" id="name" name="name" autocomplete="name" maxlength="120" required>
           </div>
           <div class="form-field">
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
+            <input type="email" id="email" name="email" autocomplete="email" maxlength="254" required>
           </div>
           <div class="form-field">
             <label>I'm interested in</label>
@@ -86,10 +79,10 @@
               <label><input type="checkbox" name="interest" value="launchhouse"> Launch House Campaign</label>
             </div>
           </div>
-          <!-- honeypot field FormSubmit recognizes for spam filtering -->
+          <!-- honeypot: hidden from people, bots fill it in and get silently ignored -->
           <div class="form-honeypot" aria-hidden="true">
-            <label for="company">Company</label>
-            <input type="text" id="company" name="_honey" tabindex="-1" autocomplete="off">
+            <label for="website">Website</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
           </div>
           <button type="submit" class="btn btn-green">Join the list</button>
           <div class="form-status" id="form-status"></div>
@@ -124,19 +117,53 @@
 <script src="assets/payment.js?v=2"></script>
 <script src="assets/team.js?v=3"></script>
 <script src="assets/site.js?v=2"></script>
+<script src="assets/volunteer-config.js?v=2"></script>
 <script>
-  document.getElementById("mailing-list-form").addEventListener("submit", function () {
+  (function () {
+    var form = document.getElementById("mailing-list-form");
     var status = document.getElementById("form-status");
-    status.textContent = "Submitting...";
-    status.className = "form-status";
-  });
+    var button = form.querySelector('button[type="submit"]');
+    var cfg = window.FOGLC_VOLUNTEER || {};
 
-  if (new URLSearchParams(window.location.search).get("submitted") === "true") {
-    var successEl = document.getElementById("mailing-list-success");
-    var formEl = document.getElementById("mailing-list-form");
-    if (successEl) successEl.style.display = "block";
-    if (formEl) formEl.style.display = "none";
-  }
+    function setStatus(msg, isError) {
+      status.textContent = msg;
+      status.className = "form-status" + (isError ? " is-error" : "");
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+
+      var interests = Array.prototype.filter.call(form.querySelectorAll('input[name="interest"]'), function (box) {
+        return box.checked;
+      }).map(function (box) { return box.parentNode.textContent.trim(); });
+
+      button.disabled = true;
+      setStatus("Submitting...");
+      fetch(cfg.apiUrl, {
+        method: "POST",
+        // text/plain keeps this a simple CORS request, which Apps Script requires.
+        body: JSON.stringify({
+          action: "subscribe",
+          name: document.getElementById("name").value,
+          email: document.getElementById("email").value,
+          interests: interests,
+          website: document.getElementById("website").value
+        })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (!res.ok) {
+          setStatus(res.error || "Something went wrong. Please try again.", true);
+          button.disabled = false;
+          return;
+        }
+        form.style.display = "none";
+        document.getElementById("mailing-list-success").style.display = "block";
+      }).catch(function () {
+        setStatus("We couldn't reach the mailing list. Please try again, or email us using the address below.", true);
+        button.disabled = false;
+      });
+    });
+  })();
 </script>
 </body>
 </html>
