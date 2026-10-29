@@ -869,3 +869,38 @@ footer a:hover { text-decoration: underline; }
 .gantt-bar.is-mine { box-shadow: inset 0 0 0 2px var(--blue-dark); }
 @keyframes slot-flash { from { box-shadow: 0 0 0 4px var(--blue); } to { box-shadow: 0 0 0 4px transparent; } }
 .slot.is-flash { animation: slot-flash 1.6s ease-out; }
+
+/* Volunteer page: team checkboxes */
+.vol-teams {
+  grid-column: 1 / -1;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.vol-teams legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.legend-hint { font-weight: 400; color: var(--muted); }
+.team-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem 1rem;
+}
+@media (max-width: 560px) {
+  .team-list { grid-template-columns: repeat(2, 1fr); }
+}
+.team-other-text {
+  width: 100%;
+  margin-top: 0.75rem;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.65rem 0.8rem;
+}
+.team-other-text:focus { outline: none; border-color: var(--green); }
+.team-other-text[hidden] { display: none; }

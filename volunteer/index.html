@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/styles.css?v=11">
+<link rel="stylesheet" href="../assets/styles.css?v=12">
 </head>
 <body>
 
@@ -73,6 +73,18 @@
           <label for="phone">Mobile phone</label>
           <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="(206) 555-0123" maxlength="25" required>
         </div>
+        <fieldset class="form-field vol-teams">
+          <legend>Which team(s) are you with? <span class="legend-hint">Pick all that apply.</span></legend>
+          <div class="checkbox-list team-list">
+            <label><input type="checkbox" name="team" value="Experienced Girls"> Experienced Girls</label>
+            <label><input type="checkbox" name="team" value="Experienced Boys"> Experienced Boys</label>
+            <label><input type="checkbox" name="team" value="Novice Girls"> Novice Girls</label>
+            <label><input type="checkbox" name="team" value="Novice Boys"> Novice Boys</label>
+            <label><input type="checkbox" name="team" value="Masters"> Masters</label>
+            <label><input type="checkbox" name="team" value="Other" id="team-other"> Other</label>
+          </div>
+          <input type="text" id="team-other-text" class="team-other-text" placeholder="Which team or group?" maxlength="60" aria-label="Other team" hidden>
+        </fieldset>
         <div class="form-honeypot" aria-hidden="true">
           <label for="website">Website</label>
           <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
@@ -115,6 +127,6 @@
 </footer>
 
 <script src="../assets/volunteer-config.js?v=2"></script>
-<script src="../assets/volunteer.js?v=5"></script>
+<script src="../assets/volunteer.js?v=6"></script>
 </body>
 </html>

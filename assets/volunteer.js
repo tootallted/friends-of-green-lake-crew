@@ -406,7 +406,9 @@
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
         firstName: $("first-name").value.trim(), lastName: $("last-name").value.trim(),
-        email: $("email").value.trim(), phone: $("phone").value.trim()
+        email: $("email").value.trim(), phone: $("phone").value.trim(),
+        teams: teamBoxes().filter(function (b) { return b.checked; }).map(function (b) { return b.value; }),
+        otherTeam: $("team-other-text").value.trim()
       }));
     } catch (e) {}
   }
@@ -419,7 +421,37 @@
       $("last-name").value = info.lastName || "";
       $("email").value = info.email || "";
       $("phone").value = info.phone || "";
+      teamBoxes().forEach(function (b) { b.checked = (info.teams || []).indexOf(b.value) !== -1; });
+      $("team-other-text").value = info.otherTeam || "";
+      syncOtherTeam();
     } catch (e) {}
+  }
+
+  /* ---------- Team checkboxes ---------- */
+
+  function teamBoxes() {
+    return Array.prototype.slice.call(document.querySelectorAll('input[name="team"]'));
+  }
+
+  // "Other" reveals a text box, which is then required.
+  function syncOtherTeam() {
+    var other = $("team-other-text");
+    other.hidden = !$("team-other").checked;
+    other.required = !other.hidden;
+  }
+
+  // At least one team is required; the message shows on the first checkbox.
+  function checkTeams() {
+    var any = teamBoxes().some(function (b) { return b.checked; });
+    teamBoxes()[0].setCustomValidity(any ? "" : "Please pick at least one team.");
+  }
+
+  // e.g. ["Novice Girls", "Other: Alumni parent"]
+  function selectedTeams() {
+    return teamBoxes().filter(function (b) { return b.checked; }).map(function (b) {
+      var other = $("team-other-text").value.trim();
+      return b.value === "Other" && other ? "Other: " + other : b.value;
+    });
   }
 
   function checkPhone() {
@@ -441,6 +473,7 @@
     e.preventDefault();
     showError("");
     checkPhone();
+    checkTeams();
     var form = $("vol-form");
     if (!form.reportValidity()) return;
     var slotIds = Object.keys(state.selected);
@@ -456,6 +489,7 @@
       lastName: $("last-name").value,
       email: $("email").value,
       phone: $("phone").value,
+      teams: selectedTeams(),
       website: $("website").value,
       slotIds: slotIds
     }).then(function (res) {
@@ -521,6 +555,9 @@
     $("gantt").addEventListener("click", onGanttClick);
     $("email").addEventListener("change", lookupMine);
     $("phone").addEventListener("input", checkPhone);
+    teamBoxes().forEach(function (b) {
+      b.addEventListener("change", function () { syncOtherTeam(); checkTeams(); });
+    });
     $("vol-form").addEventListener("submit", onSubmit);
     $("another-btn").addEventListener("click", backToForm);
 

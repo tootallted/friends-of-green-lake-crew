@@ -25,6 +25,9 @@
  *   location, description   optional, shown on the page
  *   active       optional — "no"/"false"/"hide" hides the slot
  *
+ * volunteers gets a "team" column (added automatically) holding the team(s)
+ * each volunteer picked, e.g. "Novice Girls, Masters, Other: Alumni parent".
+ *
  * To cancel someone, delete their signups row or set its status to "cancelled".
  *
  * SETUP (one time):
@@ -67,6 +70,7 @@ var SCHEMA = {
     last: ['last_name', 'lastname', 'last'],
     email: ['email', 'email_address', 'emailaddress'],
     phone: ['mobile_phone', 'phone', 'mobile', 'mobilephone', 'phone_number', 'phonenumber', 'cell', 'mobile_phone_number'],
+    teams: ['team', 'teams', 'team_association', 'association'],
     created: ['created_at', 'created', 'timestamp', 'date_added'],
     updated: ['updated_at', 'updated', 'last_updated']
   },
@@ -101,7 +105,7 @@ var TAB_NAMES = {
 // Columns the script itself writes; added to the sheet if missing.
 var WRITES = {
   slots: ['id', 'role', 'date', 'start', 'end', 'capacity', 'location', 'description'],
-  volunteers: ['id', 'first', 'last', 'email', 'phone', 'created', 'updated'],
+  volunteers: ['id', 'first', 'last', 'email', 'phone', 'teams', 'created', 'updated'],
   signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'created'],
   subscribers: ['email', 'name', 'interests', 'created', 'updated']
 };
@@ -203,11 +207,15 @@ function signup_(body) {
   var last = clean_(body.lastName, 60);
   var email = normEmail_(body.email);
   var phone = formatPhone_(body.phone);
+  // Team(s) the volunteer is with, e.g. "Novice Girls, Other: Alumni parent".
+  var teams = (Array.isArray(body.teams) ? body.teams : [])
+    .map(function (t) { return clean_(t, 80); }).filter(Boolean).filter(unique_).slice(0, 10).join(', ');
   var slotIds = (Array.isArray(body.slotIds) ? body.slotIds : []).map(String).filter(unique_);
 
   if (!first || !last) return fail_('Please enter your first and last name.');
   if (!isEmail_(email)) return fail_('Please enter a valid email address.');
   if (!phone) return fail_('Please enter a valid mobile phone number.');
+  if (!teams) return fail_('Please pick at least one team.');
   if (!slotIds.length) return fail_('Please pick at least one slot.');
   if (slotIds.length > 20) return fail_('That is a lot of slots! Please pick 20 or fewer at a time.');
 
@@ -237,7 +245,7 @@ function signup_(body) {
       picked.push(slot);
     }
 
-    var volunteer = upsertVolunteer_(ss, { first: first, last: last, email: email, phone: phone });
+    var volunteer = upsertVolunteer_(ss, { first: first, last: last, email: email, phone: phone, teams: teams });
 
     var t = table_(ss, 'signups');
     var now = new Date();
@@ -552,13 +560,14 @@ function upsertVolunteer_(ss, v) {
     t.sheet.getRange(r, t.col.first + 1).setValue(v.first);
     t.sheet.getRange(r, t.col.last + 1).setValue(v.last);
     t.sheet.getRange(r, t.col.phone + 1).setValue("'" + v.phone);
+    t.sheet.getRange(r, t.col.teams + 1).setValue(v.teams);
     t.sheet.getRange(r, t.col.updated + 1).setValue(now);
     return { id: id };
   }
   var newId = newId_('V');
   t.sheet.appendRow(rowFor_(t, {
     id: newId, first: v.first, last: v.last, email: v.email,
-    phone: "'" + v.phone, created: now, updated: now
+    phone: "'" + v.phone, teams: v.teams, created: now, updated: now
   }));
   return { id: newId };
 }
