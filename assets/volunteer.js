@@ -74,11 +74,11 @@
     var slots = [
       slot("D1", "Setup crew", 0, 7, 9, 4, 1, "Green Lake boathouse", "Tents, tables, and signage."),
       slot("D2", "Parking & traffic", 0, 7, 11, 2, 2, "North lot", "Safety vest provided."),
-      slot("D3", "Concessions", 0, 9, 11, 3, 0, "Snack tent", ""),
+      slot("D3", "Concessions", 0, 9, 11, 3, 2, "Snack tent", ""),
       slot("D4", "Concessions", 0, 11, 13, 3, 1, "Snack tent", ""),
       slot("D5", "Finish-line timer", 0, 10, 12, 2, 0, "Finish dock", "Bring a phone with a stopwatch."),
       slot("D6", "Cleanup crew", 0, 13, 15, 5, 0, "Green Lake boathouse", ""),
-      slot("D7", "Bake sale table", 1, 10, 12, 2, 0, "Boathouse lobby", "")
+      slot("D7", "Bake sale table", 1, 10, 12, 2, 1, "Boathouse lobby", "")
     ];
     var mine = {};
     function delay(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 450); }); }
@@ -112,6 +112,7 @@
       list.innerHTML = '<div class="story-empty"><p class="story-empty-title">No open slots right now</p>' +
         "<p>Check back soon &mdash; new volunteer slots are added as events come up.</p></div>";
       renderRoleFilter();
+      renderGantt();
       updateBar();
       return;
     }
@@ -212,6 +213,113 @@
     $("fill-meter-bar").style.width = (t.total ? Math.round(100 * t.filled / t.total) : 0) + "%";
   }
 
+  /* ---------- Schedule chart (Gantt) ---------- */
+
+  var LANE_PX = 34;
+
+  // 0% red -> 50% yellow -> 90%+ green, as an HSL hue sweep.
+  function fillColor(pct) {
+    var p = Math.max(0, Math.min(1, pct));
+    var hue = p >= 0.9 ? 130 : p <= 0.5 ? p / 0.5 * 50 : 50 + (p - 0.5) / 0.4 * 80;
+    return "hsl(" + Math.round(hue) + ", 68%, 58%)";
+  }
+
+  function hourLabel(d) {
+    var h = d.getHours();
+    return (h % 12 || 12) + (h < 12 ? "a" : "p");
+  }
+
+  function renderGantt() {
+    var section = $("gantt-section");
+    var wrap = $("gantt");
+    if (!state.slots.length) {
+      section.style.display = "none";
+      return;
+    }
+
+    var days = [];
+    var byDay = {};
+    state.slots.forEach(function (s) {
+      if (!byDay[s.dateKey]) { byDay[s.dateKey] = []; days.push(s.dateKey); }
+      byDay[s.dateKey].push(s);
+    });
+
+    wrap.innerHTML = days.map(function (key) {
+      var slots = byDay[key];
+      // Axis runs from the hour before the first start to the hour after the last end.
+      var first = new Date(Math.min.apply(null, slots.map(function (s) { return s.startMs; })));
+      first.setMinutes(0, 0, 0);
+      var axisStart = +first;
+      var lastEnd = Math.max.apply(null, slots.map(function (s) { return s.endMs; }));
+      var hours = Math.max(1, Math.ceil((lastEnd - axisStart) / 3600000));
+      var span = hours * 3600000;
+      var pos = function (ms) { return ((ms - axisStart) / span * 100).toFixed(3) + "%"; };
+
+      var ticks = "";
+      for (var h = 0; h <= hours; h++) {
+        var t = new Date(axisStart + h * 3600000);
+        ticks += '<span class="gantt-tick" style="left:' + pos(+t) + '">' + hourLabel(t) + "</span>";
+      }
+
+      var roles = [];
+      var byRole = {};
+      slots.forEach(function (s) {
+        if (!byRole[s.role]) { byRole[s.role] = []; roles.push(s.role); }
+        byRole[s.role].push(s);
+      });
+      roles.sort(function (a, b) { return a.localeCompare(b); });
+
+      var rows = roles.map(function (role) {
+        // Stack slots of the same role that overlap into separate lanes.
+        var laneEnds = [];
+        var bars = byRole[role].slice().sort(function (a, b) { return a.startMs - b.startMs; }).map(function (s) {
+          var lane = 0;
+          while (laneEnds[lane] > s.startMs) lane++;
+          laneEnds[lane] = s.endMs;
+          var filled = Math.min(s.filled || 0, s.capacity);
+          var pct = s.capacity ? filled / s.capacity : 1;
+          var isMine = state.mine.indexOf(s.id) !== -1;
+          var label = s.role + ", " + s.timeLabel + ": " + filled + " of " + s.capacity + " filled" +
+            (s.names && s.names.length ? " (" + s.names.join(", ") + ")" : "");
+          return '<button type="button" class="gantt-bar' + (isMine ? " is-mine" : "") + '" data-id="' + esc(s.id) + '"' +
+            ' style="left:' + pos(s.startMs) + ";width:calc(" + ((s.endMs - s.startMs) / span * 100).toFixed(3) + "% - 4px);" +
+            "top:" + (lane * LANE_PX + 4) + "px;background:" + fillColor(pct) + '"' +
+            ' title="' + esc(label) + '" aria-label="' + esc(label) + '">' +
+            filled + "/" + s.capacity + "</button>";
+        }).join("");
+        return '<div class="gantt-row"><div class="gantt-label">' + esc(role) + "</div>" +
+          '<div class="gantt-track" style="height:' + (laneEnds.length * LANE_PX) + 'px">' + bars + "</div></div>";
+      }).join("");
+
+      return '<div class="gantt-day"><h3 class="slot-day">' + esc(slots[0].dateLabel) + "</h3>" +
+        '<div class="gantt-scroll"><div class="gantt" style="--hours:' + hours + '">' +
+        '<div class="gantt-row gantt-axis"><div class="gantt-label"></div><div class="gantt-track">' + ticks + "</div></div>" +
+        rows + "</div></div></div>";
+    }).join("");
+    section.style.display = "block";
+  }
+
+  // Clicking a bar jumps to that slot in the list above.
+  function onGanttClick(e) {
+    var bar = e.target.closest(".gantt-bar");
+    if (!bar) return;
+    var id = bar.getAttribute("data-id");
+    var s = state.byId[id];
+    if (state.role && s && s.role !== state.role) {
+      state.role = "";
+      applyRoleFilter();
+    }
+    var row = Array.prototype.filter.call(document.querySelectorAll("#slot-list .slot"), function (r) {
+      return r.getAttribute("data-id") === id;
+    })[0];
+    if (!row) return;
+    if ($("vol-form").style.display === "none") backToForm();
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.classList.remove("is-flash");
+    void row.offsetWidth;
+    row.classList.add("is-flash");
+  }
+
   // Update each slot's checked/disabled state in place so keyboard focus survives.
   function refreshSlots() {
     var mineSlots = state.mine.map(function (id) { return state.byId[id]; }).filter(Boolean);
@@ -256,6 +364,7 @@
       mineNote.style.display = "none";
     }
     applyRoleFilter();
+    renderGantt();
     updateBar();
   }
 
@@ -409,6 +518,7 @@
       state.role = chip.getAttribute("data-role");
       applyRoleFilter();
     });
+    $("gantt").addEventListener("click", onGanttClick);
     $("email").addEventListener("change", lookupMine);
     $("phone").addEventListener("input", checkPhone);
     $("vol-form").addEventListener("submit", onSubmit);

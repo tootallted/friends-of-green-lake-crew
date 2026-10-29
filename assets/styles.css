@@ -783,3 +783,88 @@ footer a:hover { text-decoration: underline; }
 .slot-names { font-size: 0.85rem; color: var(--green-dark); margin-top: 0.15rem; }
 .slot-names-label { font-weight: 700; }
 .slot.is-unavailable .slot-names { opacity: 0.7; }
+
+/* Volunteer schedule chart */
+.gantt-section { margin-top: 3.5rem; }
+.gantt-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.gantt-legend-bar {
+  width: 10rem;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    hsl(0, 68%, 58%) 0%, hsl(25, 68%, 58%) 25%, hsl(50, 68%, 58%) 50%,
+    hsl(90, 68%, 58%) 70%, hsl(130, 68%, 58%) 90%, hsl(130, 68%, 58%) 100%);
+}
+.gantt-day + .gantt-day { margin-top: 1.5rem; }
+.gantt-scroll {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.gantt { min-width: calc(8.5rem + var(--hours) * 56px); }
+.gantt-row { display: flex; border-top: 1px solid var(--border); }
+.gantt-row.gantt-axis { border-top: 0; }
+.gantt-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: none;
+  width: 8.5rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  line-height: 1.3;
+}
+.gantt-track {
+  position: relative;
+  flex: 1;
+  min-height: 34px;
+  background-image: linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: calc(100% / var(--hours)) 100%;
+}
+.gantt-axis .gantt-track { height: 1.8rem; min-height: 0; background: none; }
+.gantt-tick {
+  position: absolute;
+  top: 0.4rem;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.gantt-tick:first-child { transform: translateX(3px); }
+.gantt-tick:last-child { transform: translateX(calc(-100% - 3px)); }
+.gantt-bar {
+  position: absolute;
+  height: 26px;
+  margin-left: 2px;
+  padding: 0 0.4rem;
+  border: 1px solid rgba(33, 29, 21, 0.25);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--fg);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.gantt-bar:hover { filter: brightness(1.06); border-color: var(--green-dark); }
+.gantt-bar:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: 1px; }
+.gantt-bar.is-mine { box-shadow: inset 0 0 0 2px var(--blue-dark); }
+@keyframes slot-flash { from { box-shadow: 0 0 0 4px var(--blue); } to { box-shadow: 0 0 0 4px transparent; } }
+.slot.is-flash { animation: slot-flash 1.6s ease-out; }
