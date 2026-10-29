@@ -780,3 +780,6 @@ footer a:hover { text-decoration: underline; }
   border-radius: inherit;
   transition: width 0.3s;
 }
+.slot-names { font-size: 0.85rem; color: var(--green-dark); margin-top: 0.15rem; }
+.slot-names-label { font-weight: 700; }
+.slot.is-unavailable .slot-names { opacity: 0.7; }

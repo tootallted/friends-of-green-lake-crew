@@ -59,11 +59,13 @@
     function fmt(d) {
       return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(":00", "");
     }
+    var people = ["Alex Rivera", "Jordan Lee", "Sam Patel", "Casey Morgan"];
     function slot(id, role, day, sh, eh, cap, filled, location, description) {
       var s = at(day, sh), e = at(day, eh);
       return {
         id: id, role: role, startMs: +s, endMs: +e, capacity: cap, filled: filled,
         remaining: cap - filled, location: location, description: description,
+        names: people.slice(0, filled),
         dateKey: s.toDateString(),
         dateLabel: s.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
         timeLabel: fmt(s) + " – " + fmt(e)
@@ -86,7 +88,7 @@
         if (p.action === "lookup") return delay({ ok: true, mySlotIds: mine[p.email.toLowerCase()] || [] });
         var list = mine[p.email.toLowerCase()] = (mine[p.email.toLowerCase()] || []).concat(p.slotIds);
         var picked = slots.filter(function (s) { return p.slotIds.indexOf(s.id) !== -1; });
-        picked.forEach(function (s) { s.filled++; s.remaining--; });
+        picked.forEach(function (s) { s.filled++; s.remaining--; s.names.push(p.firstName + " " + p.lastName); });
         return delay({ ok: true, signedUp: picked, mySlotIds: list, slots: slots });
       }
     };
@@ -130,6 +132,8 @@
         '<span class="slot-time">' + esc(s.timeLabel) + "</span>" +
         '<span class="slot-main"><span class="slot-role">' + esc(s.role) + "</span>" +
         (meta ? '<span class="slot-meta">' + meta + "</span>" : "") +
+        (s.names && s.names.length ? '<span class="slot-names"><span class="slot-names-label">Signed up:</span> ' +
+          s.names.map(esc).join(", ") + "</span>" : "") +
         '<span class="slot-note"></span></span>' +
         '<span class="slot-spots"></span>' +
         "</label>";

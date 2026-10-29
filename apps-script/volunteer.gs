@@ -323,11 +323,14 @@ function readSlots_(ss) {
 }
 
 function publicSlots_(ss) {
-  var counts = countBySlot_(activeSignups_(ss));
+  var signups = activeSignups_(ss);
+  var counts = countBySlot_(signups);
+  var names = namesBySlot_(ss, signups);
   return readSlots_(ss).filter(function (s) { return s.visible; }).map(function (s) {
     var p = publicSlot_(s);
     p.filled = counts[s.id] || 0;
     p.remaining = Math.max(s.capacity - p.filled, 0);
+    p.names = names[s.id] || [];
     return p;
   });
 }
@@ -416,11 +419,43 @@ function activeSignups_(ss) {
     return {
       slotId: String(cell_(t, row, 'slot')).trim(),
       email: normEmail_(cell_(t, row, 'email')),
+      volunteerId: String(cell_(t, row, 'volunteer')).trim(),
+      name: clean_(cell_(t, row, 'name'), 125),
       status: norm_(cell_(t, row, 'status'))
     };
   }).filter(function (s) {
     return s.slotId && s.status.indexOf('cancel') === -1 && s.status !== 'removed';
   });
+}
+
+// "First Last" for everyone in each slot, in sign-up order. Uses the signups
+// row's name, falling back to the volunteers tab for rows entered by hand.
+function namesBySlot_(ss, signups) {
+  var lookup = null;
+  var names = {};
+  signups.forEach(function (s) {
+    var name = s.name;
+    if (!name) {
+      if (!lookup) lookup = volunteerNames_(ss);
+      name = lookup[s.volunteerId] || lookup[s.email] || '';
+    }
+    if (name) (names[s.slotId] = names[s.slotId] || []).push(name);
+  });
+  return names;
+}
+
+function volunteerNames_(ss) {
+  var t = table_(ss, 'volunteers');
+  var map = {};
+  t.rows.forEach(function (row) {
+    var name = clean_(cell_(t, row, 'first') + ' ' + cell_(t, row, 'last'), 125);
+    if (!name) return;
+    var id = String(cell_(t, row, 'id')).trim();
+    var email = normEmail_(cell_(t, row, 'email'));
+    if (id) map[id] = name;
+    if (email) map[email] = name;
+  });
+  return map;
 }
 
 function countBySlot_(signups) {
