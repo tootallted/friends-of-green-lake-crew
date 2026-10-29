@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volunteer Sign-Up &middot; Friends of Green Lake Crew</title>
+<meta name="description" content="Sign up to volunteer with Friends of Green Lake Crew — pick the jobs and times that work for you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/styles.css?v=4">
+</head>
+<body>
+
+<div class="oar-stripe"></div>
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html">
+      <img class="brand-mark" src="../assets/crest.png" alt="Green Lake Crew crest" width="105" height="150">
+      <span>
+        Friends of Green Lake Crew
+        <span class="brand-sub">Supporting Green Lake Crew</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html">Vision</a>
+      <a href="../why-we-give.html">Why We Give</a>
+      <a href="../support.html" class="nav-cta">Support the Rowing Community</a>
+      <a href="../get-involved.html">Get Involved</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <span class="eyebrow">Volunteer</span>
+  <h1>Volunteer Sign-Up</h1>
+  <p class="tagline">
+    Tell us who you are, then pick the jobs and times that work for you.
+    Sign up for as many as you like &mdash; just not two at once.
+  </p>
+</header>
+
+<main>
+  <div class="demo-banner" id="demo-banner" style="display: none;">
+    <strong>Preview mode:</strong> these are sample slots and nothing is saved.
+  </div>
+
+  <div class="story-success vol-success" id="vol-success" style="display: none;" role="status">
+    <p class="story-success-title">Thanks, <span id="success-name"></span> &mdash; you're signed up!</p>
+    <ul class="success-list" id="success-list"></ul>
+    <p>A confirmation is on its way to your inbox.</p>
+    <button type="button" class="btn btn-green" id="another-btn">Sign up for another slot</button>
+  </div>
+
+  <form id="vol-form" novalidate>
+    <section>
+      <h2><span class="step-num">1</span> Who you are</h2>
+      <div class="mail-form vol-info">
+        <div class="form-field">
+          <label for="first-name">First name</label>
+          <input type="text" id="first-name" name="firstName" autocomplete="given-name" maxlength="60" required>
+        </div>
+        <div class="form-field">
+          <label for="last-name">Last name</label>
+          <input type="text" id="last-name" name="lastName" autocomplete="family-name" maxlength="60" required>
+        </div>
+        <div class="form-field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" autocomplete="email" maxlength="254" required>
+        </div>
+        <div class="form-field">
+          <label for="phone">Mobile phone</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="(206) 555-0123" maxlength="25" required>
+        </div>
+        <div class="form-honeypot" aria-hidden="true">
+          <label for="website">Website</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="slots-heading"><span class="step-num">2</span> Pick your slots</h2>
+      <p class="section-lede">Choose one or more. Slots that overlap a time you've already picked are greyed out.</p>
+      <p class="mine-note" id="mine-note" style="display: none;"></p>
+      <div id="slot-list" class="slot-list"></div>
+    </section>
+
+    <div class="action-bar" id="action-bar">
+      <div class="form-error" id="form-error" role="alert" style="display: none;"></div>
+      <div class="action-bar-inner">
+        <span class="selected-count" id="selected-count">Pick one or more slots</span>
+        <button type="submit" class="btn btn-green" id="submit-btn" disabled>Sign me up</button>
+      </div>
+    </div>
+  </form>
+</main>
+
+<footer>
+  <p><strong>Friends of Green Lake Crew (FOGLC)</strong> &mdash; the volunteer booster community of Green Lake Crew.</p>
+  <p><a href="https://www.greenlakecrew.org/about-us/friends-of-green-lake-crew/">greenlakecrew.org</a> &middot; <a href="../get-involved.html">Get involved</a></p>
+</footer>
+
+<script src="../assets/volunteer-config.js?v=1"></script>
+<script src="../assets/volunteer.js?v=1"></script>
+</body>
+</html>
