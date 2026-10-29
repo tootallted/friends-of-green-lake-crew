@@ -156,6 +156,9 @@
     }, { filled: 0, total: 0 });
   }
 
+  // Filter value for the "My slots" chip (shows only slots you're signed up for).
+  var MINE = "::mine";
+
   function renderRoleFilter() {
     var bar = $("role-filter");
     var roles = [];
@@ -166,7 +169,10 @@
     });
     roles.sort(function (a, b) { return a.localeCompare(b); });
     // Match a ?role= link case-insensitively; drop a filter whose role is gone.
-    state.role = roles.filter(function (r) { return r.toLowerCase() === state.role.toLowerCase(); })[0] || "";
+    if (state.role !== MINE) {
+      state.role = roles.filter(function (r) { return r.toLowerCase() === state.role.toLowerCase(); })[0] || "";
+    }
+    state.roleCount = roles.length;
     state.tallies = { "": tally(state.slots) };
     roles.forEach(function (r) { state.tallies[r] = tally(byRole[r]); });
 
@@ -184,29 +190,52 @@
     bar.innerHTML =
       '<div class="fill-summary"><p class="fill-summary-text" id="fill-summary-text" aria-live="polite"></p>' +
       '<div class="fill-meter" aria-hidden="true"><span id="fill-meter-bar"></span></div></div>' +
-      (roles.length < 2 ? "" :
-        '<span class="role-filter-label" id="role-filter-label">Filter by role &middot; spots filled</span>' +
-        '<div class="role-chips" role="group" aria-labelledby="role-filter-label">' +
-        chip("", "All roles") +
-        roles.map(function (r) { return chip(r, r); }).join("") +
-        "</div>");
+      '<div id="role-chips-wrap"><span class="role-filter-label" id="role-filter-label">Filter by role &middot; spots filled</span>' +
+      '<div class="role-chips" role="group" aria-labelledby="role-filter-label">' +
+      '<button type="button" class="role-chip role-chip-mine" data-role="' + MINE + '" aria-pressed="false" hidden>' +
+      'My slots <span class="role-chip-count"></span></button>' +
+      chip("", "All roles") +
+      (roles.length < 2 ? "" : roles.map(function (r) { return chip(r, r); }).join("")) +
+      "</div></div>";
     bar.style.display = "block";
   }
 
   function applyRoleFilter() {
+    var mineIds = state.mine.filter(function (id) { return state.byId[id]; });
+    if (state.role === MINE && !mineIds.length) state.role = "";
+    var mineMode = state.role === MINE;
+
+    // "My slots" only appears once we know this visitor's signups.
+    var mineChip = document.querySelector("#role-filter .role-chip-mine");
+    if (mineChip) {
+      mineChip.hidden = !mineIds.length;
+      mineChip.querySelector(".role-chip-count").textContent = mineIds.length;
+    }
+    var chipsWrap = $("role-chips-wrap");
+    if (chipsWrap) chipsWrap.hidden = state.roleCount < 2 && !mineIds.length;
+
     document.querySelectorAll("#role-filter .role-chip").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.getAttribute("data-role") === state.role));
     });
     document.querySelectorAll("#slot-list .slot").forEach(function (row) {
       var s = state.byId[row.getAttribute("data-id")];
-      row.hidden = !!state.role && s.role !== state.role;
+      row.hidden = mineMode ? mineIds.indexOf(s.id) === -1 : !!state.role && s.role !== state.role;
     });
     document.querySelectorAll("#slot-list .slot-day-block").forEach(function (block) {
       block.hidden = !block.querySelector(".slot:not([hidden])");
     });
 
+    if (!$("fill-summary-text")) return;
+    $("fill-meter-bar").parentNode.style.display = mineMode ? "none" : "";
+    if (mineMode) {
+      var days = mineIds.map(function (id) { return state.byId[id].dateKey; }).filter(function (d, i, a) { return a.indexOf(d) === i; });
+      $("fill-summary-text").innerHTML = "<strong>Your plan:</strong> " + mineIds.length +
+        (mineIds.length === 1 ? " slot" : " slots") + (days.length > 1 ? " across " + days.length + " days" : "") +
+        ' <span class="fill-open">&middot; tap All roles to pick more</span>';
+      return;
+    }
     var t = state.tallies && state.tallies[state.role];
-    if (!t || !$("fill-summary-text")) return;
+    if (!t) return;
     $("fill-summary-text").innerHTML = "<strong>" + t.filled + " of " + t.total + "</strong> " +
       (state.role ? esc(state.role) + " " : "") + (t.total === 1 ? "spot" : "spots") + " filled" +
       (t.total > t.filled ? ' <span class="fill-open">&middot; ' + (t.total - t.filled) + " still open</span>" : "");
@@ -358,7 +387,7 @@
     var mineNote = $("mine-note");
     if (mineSlots.length) {
       mineNote.textContent = "You're already signed up for " + mineSlots.length +
-        (mineSlots.length === 1 ? " slot" : " slots") + " (marked below). Pick more if you like!";
+        (mineSlots.length === 1 ? " slot" : " slots") + " (marked below). Tap “My slots” to see just your plan, or pick more!";
       mineNote.style.display = "block";
     } else {
       mineNote.style.display = "none";

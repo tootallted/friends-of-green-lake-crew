@@ -904,3 +904,6 @@ footer a:hover { text-decoration: underline; }
 }
 .team-other-text:focus { outline: none; border-color: var(--green); }
 .team-other-text[hidden] { display: none; }
+.role-chip-mine { border-color: var(--blue-dark); color: var(--blue-dark); }
+.role-chip-mine .role-chip-count { background: #d6eff6; }
+.role-chip-mine[aria-pressed="true"] { background: var(--blue-dark); border-color: var(--blue-dark); color: #fff; }
