@@ -47,7 +47,7 @@ a { color: var(--green); }
   z-index: 10;
 }
 .nav-inner {
-  max-width: 900px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 1rem 1.5rem;
   display: flex;
