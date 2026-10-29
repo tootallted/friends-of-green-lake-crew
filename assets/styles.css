@@ -810,7 +810,7 @@ footer a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   border-radius: 5px;
 }
-.gantt { min-width: calc(8.5rem + var(--hours) * 56px); }
+.gantt { min-width: calc(8.5rem + var(--hours) * 44px); }
 .gantt-row { display: flex; border-top: 1px solid var(--border); }
 .gantt-row.gantt-axis { border-top: 0; }
 .gantt-label {
