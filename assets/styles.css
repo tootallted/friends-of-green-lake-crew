@@ -983,3 +983,8 @@ section.announcement p:last-child { margin-bottom: 0; }
 @media (max-width: 600px) {
   .donation-details { padding-left: 1.1rem; }
 }
+.donation-section {
+  margin-top: 3.5rem;
+  padding-top: 2.5rem;
+  border-top: 2px dashed var(--border);
+}

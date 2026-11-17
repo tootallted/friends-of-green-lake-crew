@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/styles.css?v=16">
+<link rel="stylesheet" href="../assets/styles.css?v=17">
 </head>
 <body>
 
@@ -114,6 +114,17 @@
       <div id="slot-list" class="slot-list"></div>
     </section>
 
+    <section class="gantt-section" id="gantt-section" style="display: none;">
+      <h2>Schedule at a glance</h2>
+      <p class="section-lede">Every job across the day, colored by how full it is. Tap a bar to jump to that slot.</p>
+      <div class="gantt-legend" aria-hidden="true">
+        <span>0% filled</span>
+        <span class="gantt-legend-bar"></span>
+        <span>90%+ filled</span>
+      </div>
+      <div id="gantt"></div>
+    </section>
+
     <section class="donation-section" id="donation-section" style="display: none;">
       <h2><span class="step-num">3</span> Bring a baked good <span class="optional-tag">Optional</span></h2>
       <p class="section-lede">
@@ -133,17 +144,6 @@
       </div>
     </div>
   </form>
-
-  <section class="gantt-section" id="gantt-section" style="display: none;">
-    <h2>Schedule at a glance</h2>
-    <p class="section-lede">Every job across the day, colored by how full it is. Tap a bar to jump to that slot.</p>
-    <div class="gantt-legend" aria-hidden="true">
-      <span>0% filled</span>
-      <span class="gantt-legend-bar"></span>
-      <span>90%+ filled</span>
-    </div>
-    <div id="gantt"></div>
-  </section>
 </main>
 
 <footer>
