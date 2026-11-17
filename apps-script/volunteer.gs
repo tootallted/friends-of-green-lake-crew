@@ -31,7 +31,9 @@
  * Donation items (e.g. baked goods) are slots rows whose description is one of
  * CONFIG.DONATION_CATEGORIES. The page shows them in their own section as
  * things to bring, not shifts: they never clash with other slots, and each
- * signup asks what the person is bringing (saved to signups.donation_details).
+ * signup asks what the person is bringing (saved to signups.donation_details)
+ * and how many (signups.quantity; spots count quantities, not rows). Signing
+ * up again for an item you already bring updates your quantity and details.
  *
  * To cancel someone, delete their signups row or set its status to "cancelled".
  * Volunteers can also remove themselves on the page; that sets status to
@@ -94,6 +96,7 @@ var SCHEMA = {
     when: ['slot_time', 'when', 'time'],
     status: ['status'],
     donation: ['donation_details', 'donation', 'donation_notes'],
+    quantity: ['quantity', 'qty', 'servings'],
     created: ['created_at', 'created', 'timestamp', 'signed_up_at']
   },
   subscribers: {
@@ -117,7 +120,7 @@ var TAB_NAMES = {
 var WRITES = {
   slots: ['id', 'role', 'date', 'start', 'end', 'capacity', 'location', 'description'],
   volunteers: ['id', 'first', 'last', 'email', 'phone', 'teams', 'created', 'updated'],
-  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'status', 'donation', 'created'],
+  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'status', 'donation', 'quantity', 'created'],
   subscribers: ['email', 'name', 'interests', 'created', 'updated']
 };
 
@@ -156,7 +159,24 @@ function lookup_(body) {
   var email = normEmail_(body.email);
   if (!isEmail_(email)) return { ok: true, mySlotIds: [] };
   var ss = openSheet_();
-  return { ok: true, mySlotIds: activeSignups_(ss).filter(function (s) { return s.email === email; }).map(function (s) { return s.slotId; }) };
+  return mineResult_({ ok: true }, activeSignups_(ss), email);
+}
+
+// Adds mySlotIds (every slot/item I'm in) and myItems ({slotId: {quantity, details}})
+// for the given email to a response.
+function mineResult_(res, signups, email) {
+  var ids = [];
+  var items = {};
+  signups.forEach(function (s) {
+    if (s.email !== email) return;
+    if (ids.indexOf(s.slotId) === -1) ids.push(s.slotId);
+    var it = items[s.slotId] = items[s.slotId] || { quantity: 0, details: '' };
+    it.quantity += s.quantity;
+    it.details = it.details || s.details;
+  });
+  res.mySlotIds = ids;
+  res.myItems = items;
+  return res;
 }
 
 // Mailing-list signup from the Get Involved page. One row per email; a repeat
@@ -267,12 +287,11 @@ function cancel_(body) {
     } catch (err) { console.warn('Email failed: ' + err.message); }
   }
 
-  return {
+  return mineResult_({
     ok: true,
     cancelled: cancelled.map(publicSlot_),
-    mySlotIds: activeSignups_(ss).filter(function (sg) { return sg.email === email; }).map(function (sg) { return sg.slotId; }),
     slots: publicSlots_(ss)
-  };
+  }, activeSignups_(ss), email);
 }
 
 function signup_(body) {
@@ -312,25 +331,45 @@ function signup_(body) {
 
     var picked = [];
     var details = body.donationDetails && typeof body.donationDetails === 'object' ? body.donationDetails : {};
+    var quantities = body.quantities && typeof body.quantities === 'object' ? body.quantities : {};
+    var myItems = mineResult_({}, signups, email).myItems;
     for (var i = 0; i < slotIds.length; i++) {
       var slot = byId[slotIds[i]];
       if (!slot || !slot.visible) return fail_('One of the slots you picked is no longer available. Please refresh and try again.', true);
+
+      if (slot.donation) {
+        // Items to bring: count quantities; signing up again changes your amount.
+        var qty = parseInt(quantities[slot.id], 10) || 1;
+        var have = myItems[slot.id] ? myItems[slot.id].quantity : 0;
+        var others = (counts[slot.id] || 0) - have;
+        if (qty < 1) return fail_('Pick how many ' + slot.role + ' you can bring.');
+        if (others + qty > slot.capacity) {
+          var left = Math.max(slot.capacity - others, 0);
+          return fail_(left ? 'Only ' + left + ' more ' + slot.role + ' needed. Please lower your amount.'
+            : 'All the ' + slot.role + ' are claimed now. Please pick another item.', true);
+        }
+        var text = clean_(details[slot.id], 300) || (have ? myItems[slot.id].details : '');
+        if (!text) return fail_("Tell us what you're bringing for " + slot.role + '.');
+        picked.push(withExtras_(slot, { quantity: qty, details: text, update: have > 0 }));
+        continue;
+      }
+
       if (mineIds.indexOf(slot.id) !== -1) return fail_('You are already signed up for ' + label_(slot) + '.', true);
       if ((counts[slot.id] || 0) >= slot.capacity) return fail_(label_(slot) + ' just filled up. Please pick another slot.', true);
-      if (slot.donation && !clean_(details[slot.id], 300)) {
-        return fail_("Tell us what you're bringing for " + slot.role + '.');
-      }
       // Items to bring aren't time commitments, so they never clash.
-      var clash = slot.donation ? null : mine.concat(picked).filter(function (o) { return !o.donation && overlaps_(o, slot); })[0];
+      var clash = mine.concat(picked).filter(function (o) { return !o.donation && overlaps_(o, slot); })[0];
       if (clash) return fail_(label_(slot) + ' overlaps with ' + label_(clash) + '. You can only be in one place at a time!', true);
-      picked.push(slot);
+      picked.push(withExtras_(slot, { quantity: 1 }));
     }
 
     var volunteer = upsertVolunteer_(ss, { first: first, last: last, email: email, phone: phone, teams: teams });
 
     var t = table_(ss, 'signups');
     var now = new Date();
-    var rows = picked.map(function (slot) {
+    picked.filter(function (p) { return p.update; }).forEach(function (p) {
+      updateItemRows_(t, email, p);
+    });
+    var rows = picked.filter(function (p) { return !p.update; }).map(function (slot) {
       return rowFor_(t, {
         id: newId_('U'),
         slot: slot.id,
@@ -339,11 +378,12 @@ function signup_(body) {
         name: first + ' ' + last,
         role: slot.role,
         when: slot.dateLabel + ' ' + slot.timeLabel,
-        donation: slot.donation ? clean_(details[slot.id], 300) : '',
+        donation: slot.donation ? slot.details : '',
+        quantity: slot.quantity,
         created: now
       });
     });
-    t.sheet.getRange(t.sheet.getLastRow() + 1, 1, rows.length, t.width).setValues(rows);
+    if (rows.length) t.sheet.getRange(t.sheet.getLastRow() + 1, 1, rows.length, t.width).setValues(rows);
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();
@@ -353,12 +393,37 @@ function signup_(body) {
     try { sendConfirmation_(email, first, picked); } catch (err) { console.warn('Email failed: ' + err.message); }
   }
 
-  return {
+  return mineResult_({
     ok: true,
-    signedUp: picked.map(publicSlot_),
-    mySlotIds: mineIds.concat(picked.map(function (s) { return s.id; })),
+    signedUp: picked.map(function (p) { return withExtras_(publicSlot_(p), { quantity: p.quantity }); }),
     slots: publicSlots_(ss)
-  };
+  }, activeSignups_(ss), email);
+}
+
+// A copy of obj with extra fields set.
+function withExtras_(obj, extras) {
+  var copy = {};
+  Object.keys(obj).forEach(function (k) { copy[k] = obj[k]; });
+  Object.keys(extras).forEach(function (k) { copy[k] = extras[k]; });
+  return copy;
+}
+
+// Change the quantity/details on my existing row for an item; any extra
+// active rows I have for it (from before quantities existed) are cancelled.
+function updateItemRows_(t, email, item) {
+  var first = true;
+  t.rows.forEach(function (row, i) {
+    var status = norm_(cell_(t, row, 'status'));
+    if (normEmail_(cell_(t, row, 'email')) !== email || String(cell_(t, row, 'slot')).trim() !== item.id) return;
+    if (status.indexOf('cancel') !== -1 || status === 'removed') return;
+    if (first) {
+      t.sheet.getRange(i + 2, t.col.quantity + 1).setValue(item.quantity);
+      t.sheet.getRange(i + 2, t.col.donation + 1).setValue(item.details);
+      first = false;
+    } else {
+      t.sheet.getRange(i + 2, t.col.status + 1).setValue('cancelled');
+    }
+  });
 }
 
 /* ---------- Sheet access ---------- */
@@ -587,6 +652,8 @@ function activeSignups_(ss) {
       email: normEmail_(cell_(t, row, 'email')),
       volunteerId: String(cell_(t, row, 'volunteer')).trim(),
       name: clean_(cell_(t, row, 'name'), 125),
+      quantity: Math.max(1, parseInt(cell_(t, row, 'quantity'), 10) || 1),
+      details: String(cell_(t, row, 'donation')).trim(),
       status: norm_(cell_(t, row, 'status'))
     };
   }).filter(function (s) {
@@ -605,7 +672,7 @@ function namesBySlot_(ss, signups) {
       if (!lookup) lookup = volunteerNames_(ss);
       name = lookup[s.volunteerId] || lookup[s.email] || '';
     }
-    if (name) (names[s.slotId] = names[s.slotId] || []).push(name);
+    if (name) (names[s.slotId] = names[s.slotId] || []).push(s.quantity > 1 ? name + ' (×' + s.quantity + ')' : name);
   });
   return names;
 }
@@ -626,7 +693,7 @@ function volunteerNames_(ss) {
 
 function countBySlot_(signups) {
   var counts = {};
-  signups.forEach(function (s) { counts[s.slotId] = (counts[s.slotId] || 0) + 1; });
+  signups.forEach(function (s) { counts[s.slotId] = (counts[s.slotId] || 0) + s.quantity; });
   return counts;
 }
 
@@ -662,7 +729,7 @@ function sendConfirmation_(email, first, slots) {
   if (!slots.length) return;
   var items = slots.map(function (s) {
     if (s.donation) {
-      return '<li>Bringing <strong>' + esc_(s.role) + '</strong> — drop off by ' +
+      return '<li>Bringing <strong>' + (s.quantity > 1 ? s.quantity + ' × ' : '') + esc_(s.role) + '</strong> — drop off by ' +
         esc_(s.timeLabel.split(' – ').pop()) + ', ' + esc_(s.dateLabel) + (s.location ? ' · ' + esc_(s.location) : '') + '</li>';
     }
     return '<li><strong>' + esc_(s.role) + '</strong> — ' + esc_(s.dateLabel) + ', ' + esc_(s.timeLabel) +
