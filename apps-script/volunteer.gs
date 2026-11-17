@@ -29,6 +29,8 @@
  * each volunteer picked, e.g. "Novice Girls, Masters, Other: Alumni parent".
  *
  * To cancel someone, delete their signups row or set its status to "cancelled".
+ * Volunteers can also remove themselves on the page; that sets status to
+ * "cancelled" after checking their email and mobile number match.
  *
  * SETUP (one time):
  *   1. In the sheet: Extensions → Apps Script. Replace Code.gs with this file.
@@ -106,7 +108,7 @@ var TAB_NAMES = {
 var WRITES = {
   slots: ['id', 'role', 'date', 'start', 'end', 'capacity', 'location', 'description'],
   volunteers: ['id', 'first', 'last', 'email', 'phone', 'teams', 'created', 'updated'],
-  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'created'],
+  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'status', 'created'],
   subscribers: ['email', 'name', 'interests', 'created', 'updated']
 };
 
@@ -132,6 +134,7 @@ function doPost(e) {
     if (body.action === 'lookup') return json_(lookup_(body));
     if (body.action === 'signup') return json_(signup_(body));
     if (body.action === 'subscribe') return json_(subscribe_(body));
+    if (body.action === 'cancel') return json_(cancel_(body));
     return json_({ ok: false, error: 'Unknown action.' });
   } catch (err) {
     return json_({ ok: false, error: 'Something went wrong: ' + err.message });
@@ -197,6 +200,70 @@ function subscribe_(body) {
     } catch (err) { console.warn('Notify failed: ' + err.message); }
   }
   return { ok: true, isNew: isNew };
+}
+
+// A volunteer removing themselves from slots. The email AND mobile number
+// must match their volunteers row, so knowing someone's email isn't enough.
+function cancel_(body) {
+  if (body.website) return { ok: true, cancelled: [], mySlotIds: [] };
+
+  var email = normEmail_(body.email);
+  var phoneDigits = String(body.phone || '').replace(/\D/g, '').slice(-10);
+  var slotIds = (Array.isArray(body.slotIds) ? body.slotIds : []).map(String).filter(unique_);
+  if (!isEmail_(email)) return fail_('Please enter a valid email address.');
+  if (phoneDigits.length < 7) return fail_('Please enter the mobile number you signed up with.');
+  if (!slotIds.length) return fail_('Pick a slot to remove.');
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return fail_('The sign-up sheet is busy. Please try again in a moment.');
+  var cancelled = [];
+  try {
+    var ss = openSheet_();
+    var vt = table_(ss, 'volunteers');
+    var vrow = vt.rows.filter(function (r) { return normEmail_(cell_(vt, r, 'email')) === email; })[0];
+    if (!vrow || String(cell_(vt, vrow, 'phone')).replace(/\D/g, '').slice(-10) !== phoneDigits) {
+      return fail_("That mobile number doesn't match the one we have for this email. Use the number you signed up with, or email us to make changes.");
+    }
+
+    var byId = {};
+    readSlots_(ss).forEach(function (sl) { byId[sl.id] = sl; });
+    var t = table_(ss, 'signups');
+    t.rows.forEach(function (row, i) {
+      var slotId = String(cell_(t, row, 'slot')).trim();
+      var status = norm_(cell_(t, row, 'status'));
+      if (normEmail_(cell_(t, row, 'email')) !== email || slotIds.indexOf(slotId) === -1) return;
+      if (status.indexOf('cancel') !== -1 || status === 'removed') return;
+      var slot = byId[slotId];
+      if (!slot || !slot.visible) return; // leave past/hidden slots alone
+      t.sheet.getRange(i + 2, t.col.status + 1).setValue('cancelled');
+      if (cancelled.indexOf(slot) === -1) cancelled.push(slot);
+    });
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+  if (!cancelled.length) return fail_("You're no longer signed up for that slot. Please refresh the page.", true);
+
+  if (CONFIG.SEND_CONFIRMATION_EMAIL) {
+    try {
+      MailApp.sendEmail({
+        to: email,
+        name: CONFIG.ORG_NAME,
+        subject: "You've been removed from " + (cancelled.length === 1 ? cancelled[0].role + ', ' + cancelled[0].dateLabel : cancelled.length + ' volunteer slots'),
+        htmlBody: "<p>You're no longer signed up for:</p><ul>" + cancelled.map(function (sl) {
+          return '<li><strong>' + esc_(sl.role) + '</strong> — ' + esc_(sl.dateLabel) + ', ' + esc_(sl.timeLabel) + '</li>';
+        }).join('') + "</ul><p>If you didn't make this change, just reply to this email.</p>" +
+          '<p>Pick a different slot any time: <a href="' + CONFIG.SIGNUP_PAGE_URL + '">' + CONFIG.SIGNUP_PAGE_URL + '</a></p>'
+      });
+    } catch (err) { console.warn('Email failed: ' + err.message); }
+  }
+
+  return {
+    ok: true,
+    cancelled: cancelled.map(publicSlot_),
+    mySlotIds: activeSignups_(ss).filter(function (sg) { return sg.email === email; }).map(function (sg) { return sg.slotId; }),
+    slots: publicSlots_(ss)
+  };
 }
 
 function signup_(body) {
