@@ -28,6 +28,11 @@
  * volunteers gets a "team" column (added automatically) holding the team(s)
  * each volunteer picked, e.g. "Novice Girls, Masters, Other: Alumni parent".
  *
+ * Donation items (e.g. baked goods) are slots rows whose description is one of
+ * CONFIG.DONATION_CATEGORIES. The page shows them in their own section as
+ * things to bring, not shifts: they never clash with other slots, and each
+ * signup asks what the person is bringing (saved to signups.donation_details).
+ *
  * To cancel someone, delete their signups row or set its status to "cancelled".
  * Volunteers can also remove themselves on the page; that sets status to
  * "cancelled" after checking their email and mobile number match.
@@ -50,6 +55,9 @@ var CONFIG = {
   // Who gets an email for each new mailing-list subscriber ('' to turn off).
   SUBSCRIBER_NOTIFY_EMAIL: 'tootallted@gmail.com',
   HIDE_PAST_SLOTS: true,
+  // slots rows whose description (column G) matches one of these are items to
+  // bring rather than shifts to work. Matched ignoring case and spaces.
+  DONATION_CATEGORIES: ['Baked Goods'],
   DEFAULT_SLOT_MINUTES: 60 // used when a slot has a start time but no end time
 };
 
@@ -85,6 +93,7 @@ var SCHEMA = {
     role: ['role', 'job', 'slot_name'],
     when: ['slot_time', 'when', 'time'],
     status: ['status'],
+    donation: ['donation_details', 'donation', 'donation_notes'],
     created: ['created_at', 'created', 'timestamp', 'signed_up_at']
   },
   subscribers: {
@@ -108,7 +117,7 @@ var TAB_NAMES = {
 var WRITES = {
   slots: ['id', 'role', 'date', 'start', 'end', 'capacity', 'location', 'description'],
   volunteers: ['id', 'first', 'last', 'email', 'phone', 'teams', 'created', 'updated'],
-  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'status', 'created'],
+  signups: ['id', 'slot', 'volunteer', 'email', 'name', 'role', 'when', 'status', 'donation', 'created'],
   subscribers: ['email', 'name', 'interests', 'created', 'updated']
 };
 
@@ -302,12 +311,17 @@ function signup_(body) {
     var mineIds = mine.map(function (s) { return s.id; });
 
     var picked = [];
+    var details = body.donationDetails && typeof body.donationDetails === 'object' ? body.donationDetails : {};
     for (var i = 0; i < slotIds.length; i++) {
       var slot = byId[slotIds[i]];
       if (!slot || !slot.visible) return fail_('One of the slots you picked is no longer available. Please refresh and try again.', true);
       if (mineIds.indexOf(slot.id) !== -1) return fail_('You are already signed up for ' + label_(slot) + '.', true);
       if ((counts[slot.id] || 0) >= slot.capacity) return fail_(label_(slot) + ' just filled up. Please pick another slot.', true);
-      var clash = mine.concat(picked).filter(function (o) { return overlaps_(o, slot); })[0];
+      if (slot.donation && !clean_(details[slot.id], 300)) {
+        return fail_("Tell us what you're bringing for " + slot.role + '.');
+      }
+      // Items to bring aren't time commitments, so they never clash.
+      var clash = slot.donation ? null : mine.concat(picked).filter(function (o) { return !o.donation && overlaps_(o, slot); })[0];
       if (clash) return fail_(label_(slot) + ' overlaps with ' + label_(clash) + '. You can only be in one place at a time!', true);
       picked.push(slot);
     }
@@ -325,6 +339,7 @@ function signup_(body) {
         name: first + ' ' + last,
         role: slot.role,
         when: slot.dateLabel + ' ' + slot.timeLabel,
+        donation: slot.donation ? clean_(details[slot.id], 300) : '',
         created: now
       });
     });
@@ -459,6 +474,7 @@ function readSlots_(ss) {
       capacity: isNaN(cap) ? 1 : Math.max(cap, 0),
       location: String(cell_(t, disp, 'location')).trim(),
       description: String(cell_(t, disp, 'description')).trim(),
+      donation: CONFIG.DONATION_CATEGORIES.map(norm_).indexOf(norm_(cell_(t, disp, 'description'))) !== -1,
       dateKey: Utilities.formatDate(start, tz, 'yyyy-MM-dd'),
       dateLabel: Utilities.formatDate(start, tz, 'EEEE, MMMM d'),
       timeLabel: allDay ? 'All day' : timeRange_(start, end, tz),
@@ -495,7 +511,8 @@ function publicSlot_(s) {
     timeLabel: s.timeLabel,
     capacity: s.capacity,
     location: s.location,
-    description: s.description
+    description: s.description,
+    kind: s.donation ? 'donation' : 'shift'
   };
 }
 
@@ -644,6 +661,10 @@ function upsertVolunteer_(ss, v) {
 function sendConfirmation_(email, first, slots) {
   if (!slots.length) return;
   var items = slots.map(function (s) {
+    if (s.donation) {
+      return '<li>Bringing <strong>' + esc_(s.role) + '</strong> — drop off by ' +
+        esc_(s.timeLabel.split(' – ').pop()) + ', ' + esc_(s.dateLabel) + (s.location ? ' · ' + esc_(s.location) : '') + '</li>';
+    }
     return '<li><strong>' + esc_(s.role) + '</strong> — ' + esc_(s.dateLabel) + ', ' + esc_(s.timeLabel) +
       (s.location ? ' · ' + esc_(s.location) : '') + '</li>';
   }).join('');

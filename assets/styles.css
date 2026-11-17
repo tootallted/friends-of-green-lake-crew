@@ -932,3 +932,54 @@ section.announcement p:last-child { margin-bottom: 0; }
 @media (max-width: 560px) {
   section.announcement { padding: 1.25rem; }
 }
+
+/* Volunteer page: items to bring (baked goods) */
+.optional-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--green-light);
+  color: var(--green-dark);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: 0.3em;
+}
+.donation-summary { margin: 0 0 0.9rem; color: var(--green-dark); }
+.slot.slot-donation { display: block; padding: 0; }
+.slot-donation .donation-pick {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.25rem 0.9rem;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+}
+.slot-donation .donation-pick > * { grid-area: auto; }
+.slot-donation.is-unavailable .donation-pick { cursor: not-allowed; }
+.donation-details {
+  padding: 0 1.1rem 1rem calc(1.1rem + 1.3rem + 0.9rem);
+}
+.donation-details label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.donation-input {
+  width: 100%;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.55rem 0.75rem;
+}
+.donation-input:focus { outline: none; border-color: var(--green); }
+.donation-details[hidden], .donation-section[hidden] { display: none; }
+@media (max-width: 600px) {
+  .donation-details { padding-left: 1.1rem; }
+}

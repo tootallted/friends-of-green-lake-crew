@@ -11,7 +11,8 @@
 
   var state = {
     // selected: new slots to sign up for; removing: my existing slots to drop.
-    slots: [], byId: {}, selected: {}, removing: {}, mine: [], lookedUp: "",
+    // slots: shifts to work; donations: items to bring (e.g. baked goods).
+    slots: [], donations: [], donationText: {}, byId: {}, selected: {}, removing: {}, mine: [], lookedUp: "",
     // ?role=Concessions pre-filters the list, so organizers can link to one job.
     role: new URLSearchParams(window.location.search).get("role") || ""
   };
@@ -52,6 +53,7 @@
     var base = new Date();
     base.setDate(base.getDate() + ((6 - base.getDay() + 7) % 7 || 7));
     function at(dayOffset, h, m) {
+      if (h % 1) { m = Math.round(h % 1 * 60); h = Math.floor(h); }
       var d = new Date(base);
       d.setDate(d.getDate() + dayOffset);
       d.setHours(h, m || 0, 0, 0);
@@ -61,9 +63,10 @@
       return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(":00", "");
     }
     var people = ["Alex Rivera", "Jordan Lee", "Sam Patel", "Casey Morgan"];
-    function slot(id, role, day, sh, eh, cap, filled, location, description) {
+    function slot(id, role, day, sh, eh, cap, filled, location, description, kind) {
       var s = at(day, sh), e = at(day, eh);
       return {
+        kind: kind || "shift",
         id: id, role: role, startMs: +s, endMs: +e, capacity: cap, filled: filled,
         remaining: cap - filled, location: location, description: description,
         names: people.slice(0, filled),
@@ -79,7 +82,10 @@
       slot("D4", "Concessions", 0, 11, 13, 3, 1, "Snack tent", ""),
       slot("D5", "Finish-line timer", 0, 10, 12, 2, 0, "Finish dock", "Bring a phone with a stopwatch."),
       slot("D6", "Cleanup crew", 0, 13, 15, 5, 0, "Green Lake boathouse", ""),
-      slot("D7", "Bake sale table", 1, 10, 12, 2, 1, "Boathouse lobby", "")
+      slot("D7", "Bake sale table", 1, 10, 12, 2, 1, "Boathouse lobby", ""),
+      slot("B1", "Blueberry Muffins", 0, 6.9, 7, 4, 1, "Baked Goods dropped off at food tent", "Baked Goods", "donation"),
+      slot("B2", "Banana Bread", 0, 6.9, 7, 2, 0, "Baked Goods dropped off at food tent", "Baked Goods", "donation"),
+      slot("B3", "Gluten Free Cookies", 0, 6.9, 7, 2, 2, "Baked Goods dropped off at food tent", "Baked Goods", "donation")
     ];
     var mine = {};
     function delay(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 450); }); }
@@ -103,10 +109,16 @@
 
   /* ---------- Slot list ---------- */
 
+  function isDonation(s) {
+    return s && s.kind === "donation";
+  }
+
   function setSlots(slots) {
-    state.slots = slots || [];
+    slots = slots || [];
+    state.slots = slots.filter(function (s) { return !isDonation(s); });
+    state.donations = slots.filter(isDonation);
     state.byId = {};
-    state.slots.forEach(function (s) { state.byId[s.id] = s; });
+    slots.forEach(function (s) { state.byId[s.id] = s; });
     Object.keys(state.selected).forEach(function (id) {
       if (!state.byId[id]) delete state.selected[id];
     });
@@ -115,12 +127,12 @@
 
   function renderSlots() {
     var list = $("slot-list");
+    renderDonations();
     if (!state.slots.length) {
       list.innerHTML = '<div class="story-empty"><p class="story-empty-title">No open slots right now</p>' +
         "<p>Check back soon &mdash; new volunteer slots are added as events come up.</p></div>";
       renderRoleFilter();
-      renderGantt();
-      updateBar();
+      refreshSlots();
       return;
     }
 
@@ -150,6 +162,59 @@
     list.innerHTML = html;
     renderRoleFilter();
     refreshSlots();
+  }
+
+  /* ---------- Items to bring (baked goods) ---------- */
+
+  function renderDonations() {
+    var section = $("donation-section");
+    var list = $("donation-list");
+    if (!state.donations.length) {
+      section.style.display = "none";
+      list.innerHTML = "";
+      return;
+    }
+    // All items share a drop-off; use the earliest one for the intro line.
+    var first = state.donations.slice().sort(function (a, b) { return a.endMs - b.endMs; })[0];
+    $("donation-due").textContent = "Drop it off by " + first.timeLabel.split(" – ").pop() + " on " + first.dateLabel + ".";
+
+    list.innerHTML = state.donations.map(function (s) {
+      var id = esc(s.id);
+      return '<div class="slot slot-donation" data-id="' + id + '">' +
+        '<label class="donation-pick">' +
+        '<input type="checkbox" class="slot-check" value="' + id + '">' +
+        '<span class="slot-box" aria-hidden="true"></span>' +
+        '<span class="slot-main"><span class="slot-role">' + esc(s.role) + "</span>" +
+        (s.location ? '<span class="slot-meta">' + esc(s.location) + "</span>" : "") +
+        (s.names && s.names.length ? '<span class="slot-names"><span class="slot-names-label">Bringing:</span> ' +
+          s.names.map(esc).join(", ") + "</span>" : "") +
+        '<span class="slot-note"></span></span>' +
+        '<span class="slot-spots"></span>' +
+        "</label>" +
+        '<div class="donation-details" hidden>' +
+        '<label for="dd-' + id + '">What are you bringing?</label>' +
+        '<input type="text" id="dd-' + id + '" class="donation-input" data-id="' + id + '" maxlength="300"' +
+        ' placeholder="e.g. 1 dozen, homemade, contains nuts" value="' + esc(state.donationText[s.id] || "") + '">' +
+        "</div></div>";
+    }).join("");
+    section.style.display = "block";
+  }
+
+  // Show the details box (required) for each newly picked item; update the claimed count.
+  function refreshDonations(mineMode) {
+    document.querySelectorAll("#donation-list .slot").forEach(function (row) {
+      var id = row.getAttribute("data-id");
+      var picked = !!state.selected[id];
+      var details = row.querySelector(".donation-details");
+      details.hidden = !picked;
+      details.querySelector("input").required = picked;
+      row.hidden = mineMode && state.mine.indexOf(id) === -1;
+    });
+    var t = tally(state.donations);
+    $("donation-summary").innerHTML = "<strong>" + t.filled + " of " + t.total + "</strong> items claimed" +
+      (t.total > t.filled ? ' <span class="fill-open">&middot; ' + (t.total - t.filled) + " still needed</span>" : "");
+    var anyMine = state.donations.some(function (s) { return state.mine.indexOf(s.id) !== -1; });
+    $("donation-section").style.display = !state.donations.length || (mineMode && !anyMine) ? "none" : "block";
   }
 
   /* ---------- Role filter ---------- */
@@ -231,6 +296,7 @@
     document.querySelectorAll("#slot-list .slot-day-block").forEach(function (block) {
       block.hidden = !block.querySelector(".slot:not([hidden])");
     });
+    refreshDonations(mineMode);
 
     if (!$("fill-summary-text")) return;
     $("fill-meter-bar").parentNode.style.display = mineMode ? "none" : "";
@@ -360,9 +426,10 @@
   function refreshSlots() {
     var mineSlots = state.mine.map(function (id) { return state.byId[id]; }).filter(Boolean);
     var picked = Object.keys(state.selected).map(function (id) { return state.byId[id]; });
-    var keptMine = mineSlots.filter(function (o) { return !state.removing[o.id]; });
+    var keptMine = mineSlots.filter(function (o) { return !state.removing[o.id] && !isDonation(o); });
+    picked = picked.filter(function (o) { return !isDonation(o); });
 
-    document.querySelectorAll("#slot-list .slot").forEach(function (row) {
+    document.querySelectorAll("#slot-list .slot, #donation-list .slot").forEach(function (row) {
       var s = state.byId[row.getAttribute("data-id")];
       var box = row.querySelector("input");
       var note = row.querySelector(".slot-note");
@@ -372,28 +439,28 @@
       var keeping = isMine && !isRemoving;
       var isPicked = !!state.selected[s.id];
       var full = s.remaining <= 0;
-      var clash = keeping || isPicked ? null :
+      var clash = keeping || isPicked || isDonation(s) ? null :
         keptMine.concat(picked).filter(function (o) { return o.id !== s.id && overlaps(o, s); })[0];
 
       box.checked = keeping || isPicked;
       // Your own slots can be unchecked to drop them (and re-checked unless that now clashes).
       box.disabled = isMine ? !!clash : !isPicked && (full || !!clash);
-      row.className = "slot" +
+      row.className = "slot" + (isDonation(s) ? " slot-donation" : "") +
         (keeping ? " is-mine" : "") +
         (isRemoving ? " is-removing" : "") +
         (isPicked ? " is-picked" : "") +
         (box.disabled && !isMine ? " is-unavailable" : "");
 
       if (keeping) {
-        spots.textContent = "You're in";
+        spots.textContent = isDonation(s) ? "You're bringing" : "You're in";
       } else if (isRemoving) {
         spots.textContent = "Removing";
       } else if (full) {
-        spots.textContent = "Full";
+        spots.textContent = isDonation(s) ? "All claimed" : "Full";
       } else {
-        spots.textContent = s.remaining + " of " + s.capacity + " open";
+        spots.textContent = s.remaining + " of " + s.capacity + (isDonation(s) ? " needed" : " open");
       }
-      note.textContent = isRemoving && !clash ? "You'll be removed from this slot when you save."
+      note.textContent = isRemoving && !clash ? (isDonation(s) ? "You'll be taken off this item when you save." : "You'll be removed from this slot when you save.")
         : clash && (isMine || !full) ? "Overlaps with " + clash.role + " (" + clash.timeLabel + ")"
         : "";
     });
@@ -531,7 +598,7 @@
     if (adds.length) checkTeams(); else teamBoxes()[0].setCustomValidity("");
     var form = $("vol-form");
     if (!form.reportValidity()) return;
-    if (!adds.length && !removes.length) return showError("Pick at least one slot to volunteer for.");
+    if (!adds.length && !removes.length) return showError("Pick at least one slot or baked good.");
 
     var btn = $("submit-btn");
     btn.disabled = true;
@@ -545,6 +612,10 @@
       teams: selectedTeams(),
       website: $("website").value
     };
+    var donationDetails = {};
+    adds.forEach(function (id) {
+      if (isDonation(state.byId[id])) donationDetails[id] = (state.donationText[id] || "").trim();
+    });
     var result = { signedUp: [], cancelled: [] };
 
     function apply(res) {
@@ -569,6 +640,7 @@
       });
     }
     if (adds.length) {
+      info.donationDetails = donationDetails;
       chain = chain.then(function () { return send("signup", adds); }).then(function (res) {
         result.signedUp = res.signedUp || [];
         state.selected = {};
@@ -599,6 +671,10 @@
 
   function showSuccess(signedUp, cancelled) {
     function item(s) {
+      if (isDonation(s)) {
+        return "<li>Bringing <strong>" + esc(s.role) + "</strong> &mdash; drop off by " +
+          esc(s.timeLabel.split(" – ").pop()) + ", " + esc(s.dateLabel) + "</li>";
+      }
       return "<li><strong>" + esc(s.role) + "</strong> &mdash; " + esc(s.dateLabel) + ", " + esc(s.timeLabel) +
         (s.location ? " &middot; " + esc(s.location) : "") + "</li>";
     }
@@ -628,7 +704,9 @@
     if (demo) $("demo-banner").style.display = "block";
     restoreInfo();
 
-    $("slot-list").addEventListener("change", function (e) {
+    $("donation-list").addEventListener("change", onSlotToggle);
+    $("slot-list").addEventListener("change", onSlotToggle);
+    function onSlotToggle(e) {
       if (!e.target.classList.contains("slot-check")) return;
       var id = e.target.value;
       if (state.mine.indexOf(id) !== -1) {
@@ -641,7 +719,7 @@
       }
       showError("");
       refreshSlots();
-    });
+    }
     $("role-filter").addEventListener("click", function (e) {
       var chip = e.target.closest(".role-chip");
       if (!chip) return;
@@ -649,6 +727,9 @@
       applyRoleFilter();
     });
     $("gantt").addEventListener("click", onGanttClick);
+    $("donation-list").addEventListener("input", function (e) {
+      if (e.target.classList.contains("donation-input")) state.donationText[e.target.getAttribute("data-id")] = e.target.value;
+    });
     $("email").addEventListener("change", lookupMine);
     $("phone").addEventListener("input", checkPhone);
     teamBoxes().forEach(function (b) {
