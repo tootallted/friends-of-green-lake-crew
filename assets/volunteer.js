@@ -10,7 +10,8 @@
   var STORE_KEY = "foglc-volunteer-info";
 
   var state = {
-    slots: [], byId: {}, selected: {}, mine: [], lookedUp: "",
+    // selected: new slots to sign up for; removing: my existing slots to drop.
+    slots: [], byId: {}, selected: {}, removing: {}, mine: [], lookedUp: "",
     // ?role=Concessions pre-filters the list, so organizers can link to one job.
     role: new URLSearchParams(window.location.search).get("role") || ""
   };
@@ -86,6 +87,12 @@
       slots: function () { return delay({ ok: true, slots: slots }); },
       post: function (p) {
         if (p.action === "lookup") return delay({ ok: true, mySlotIds: mine[p.email.toLowerCase()] || [] });
+        if (p.action === "cancel") {
+          var gone = slots.filter(function (s) { return p.slotIds.indexOf(s.id) !== -1; });
+          gone.forEach(function (s) { s.filled--; s.remaining++; s.names.splice(s.names.indexOf(p.firstName + " " + p.lastName), 1); });
+          mine[p.email.toLowerCase()] = (mine[p.email.toLowerCase()] || []).filter(function (id) { return p.slotIds.indexOf(id) === -1; });
+          return delay({ ok: true, cancelled: gone, mySlotIds: mine[p.email.toLowerCase()], slots: slots });
+        }
         var list = mine[p.email.toLowerCase()] = (mine[p.email.toLowerCase()] || []).concat(p.slotIds);
         var picked = slots.filter(function (s) { return p.slotIds.indexOf(s.id) !== -1; });
         picked.forEach(function (s) { s.filled++; s.remaining--; s.names.push(p.firstName + " " + p.lastName); });
@@ -353,6 +360,7 @@
   function refreshSlots() {
     var mineSlots = state.mine.map(function (id) { return state.byId[id]; }).filter(Boolean);
     var picked = Object.keys(state.selected).map(function (id) { return state.byId[id]; });
+    var keptMine = mineSlots.filter(function (o) { return !state.removing[o.id]; });
 
     document.querySelectorAll("#slot-list .slot").forEach(function (row) {
       var s = state.byId[row.getAttribute("data-id")];
@@ -360,34 +368,40 @@
       var note = row.querySelector(".slot-note");
       var spots = row.querySelector(".slot-spots");
       var isMine = state.mine.indexOf(s.id) !== -1;
+      var isRemoving = isMine && !!state.removing[s.id];
+      var keeping = isMine && !isRemoving;
       var isPicked = !!state.selected[s.id];
       var full = s.remaining <= 0;
-      var clash = isMine || isPicked ? null :
-        mineSlots.concat(picked).filter(function (o) { return o.id !== s.id && overlaps(o, s); })[0];
+      var clash = keeping || isPicked ? null :
+        keptMine.concat(picked).filter(function (o) { return o.id !== s.id && overlaps(o, s); })[0];
 
-      box.checked = isMine || isPicked;
-      box.disabled = isMine || (!isPicked && (full || !!clash));
+      box.checked = keeping || isPicked;
+      // Your own slots can be unchecked to drop them (and re-checked unless that now clashes).
+      box.disabled = isMine ? !!clash : !isPicked && (full || !!clash);
       row.className = "slot" +
-        (isMine ? " is-mine" : "") +
+        (keeping ? " is-mine" : "") +
+        (isRemoving ? " is-removing" : "") +
         (isPicked ? " is-picked" : "") +
         (box.disabled && !isMine ? " is-unavailable" : "");
 
-      if (isMine) {
+      if (keeping) {
         spots.textContent = "You're in";
+      } else if (isRemoving) {
+        spots.textContent = "Removing";
       } else if (full) {
         spots.textContent = "Full";
       } else {
         spots.textContent = s.remaining + " of " + s.capacity + " open";
       }
-      note.textContent = clash && !full
-        ? "Overlaps with " + clash.role + " (" + clash.timeLabel + ")"
+      note.textContent = isRemoving && !clash ? "You'll be removed from this slot when you save."
+        : clash && (isMine || !full) ? "Overlaps with " + clash.role + " (" + clash.timeLabel + ")"
         : "";
     });
 
     var mineNote = $("mine-note");
     if (mineSlots.length) {
       mineNote.textContent = "You're already signed up for " + mineSlots.length +
-        (mineSlots.length === 1 ? " slot" : " slots") + " (marked below). Tap “My slots” to see just your plan, or pick more!";
+        (mineSlots.length === 1 ? " slot" : " slots") + " (marked below). Uncheck one to drop it, tap “My slots” to see just your plan, or pick more!";
       mineNote.style.display = "block";
     } else {
       mineNote.style.display = "none";
@@ -397,12 +411,20 @@
     updateBar();
   }
 
+  function submitLabel(adds, removes) {
+    return adds && removes ? "Save changes" : removes ? "Remove me" : "Sign me up";
+  }
+
   function updateBar() {
     var n = Object.keys(state.selected).length;
-    $("selected-count").textContent = n === 0 ? "Pick one or more slots" :
-      n + (n === 1 ? " slot" : " slots") + " selected";
-    $("submit-btn").disabled = n === 0 || !configured;
-    $("action-bar").classList.toggle("has-selection", n > 0);
+    var r = Object.keys(state.removing).length;
+    var parts = [];
+    if (n) parts.push(n + (n === 1 ? " slot" : " slots") + " selected");
+    if (r) parts.push(r + " to remove");
+    $("selected-count").textContent = parts.length ? parts.join(" · ") : "Pick one or more slots";
+    $("submit-btn").disabled = n + r === 0 || !configured;
+    $("submit-btn").textContent = submitLabel(n, r);
+    $("action-bar").classList.toggle("has-selection", n + r > 0);
   }
 
   function loadSlots() {
@@ -427,6 +449,7 @@
       if (state.lookedUp !== email || !res.ok) return;
       state.mine = res.mySlotIds || [];
       state.mine.forEach(function (id) { delete state.selected[id]; });
+      state.removing = {};
       refreshSlots();
     }).catch(function () {});
   }
@@ -501,55 +524,92 @@
   function onSubmit(e) {
     e.preventDefault();
     showError("");
+    var adds = Object.keys(state.selected);
+    var removes = Object.keys(state.removing);
     checkPhone();
-    checkTeams();
+    // Teams are only needed when signing up for something new.
+    if (adds.length) checkTeams(); else teamBoxes()[0].setCustomValidity("");
     var form = $("vol-form");
     if (!form.reportValidity()) return;
-    var slotIds = Object.keys(state.selected);
-    if (!slotIds.length) return showError("Pick at least one slot to volunteer for.");
+    if (!adds.length && !removes.length) return showError("Pick at least one slot to volunteer for.");
 
     var btn = $("submit-btn");
     btn.disabled = true;
-    btn.textContent = "Signing you up…";
+    btn.textContent = removes.length && !adds.length ? "Removing you…" : "Saving…";
 
-    api.post({
-      action: "signup",
+    var info = {
       firstName: $("first-name").value,
       lastName: $("last-name").value,
       email: $("email").value,
       phone: $("phone").value,
       teams: selectedTeams(),
-      website: $("website").value,
-      slotIds: slotIds
-    }).then(function (res) {
-      if (!res.ok) {
-        showError(res.error || "Something went wrong. Please try again.");
-        if (res.refresh) {
-          state.selected = {};
-          loadSlots();
-        }
-        return;
-      }
-      saveInfo();
-      state.selected = {};
+      website: $("website").value
+    };
+    var result = { signedUp: [], cancelled: [] };
+
+    function apply(res) {
       state.mine = res.mySlotIds || state.mine;
       state.lookedUp = $("email").value.trim().toLowerCase();
       if (res.slots) setSlots(res.slots);
-      showSuccess(res.signedUp || []);
-    }).catch(function () {
-      showError("We couldn't reach the sign-up sheet. Check your connection and try again.");
+    }
+    function send(action, slotIds) {
+      return api.post(Object.assign({ action: action, slotIds: slotIds }, info)).then(function (res) {
+        if (!res.ok) throw res;
+        return res;
+      });
+    }
+
+    // Drop slots first so a replacement slot at the same time isn't blocked.
+    var chain = Promise.resolve();
+    if (removes.length) {
+      chain = chain.then(function () { return send("cancel", removes); }).then(function (res) {
+        result.cancelled = res.cancelled || [];
+        state.removing = {};
+        apply(res);
+      });
+    }
+    if (adds.length) {
+      chain = chain.then(function () { return send("signup", adds); }).then(function (res) {
+        result.signedUp = res.signedUp || [];
+        state.selected = {};
+        apply(res);
+      });
+    }
+
+    chain.then(function () {
+      saveInfo();
+      showSuccess(result.signedUp, result.cancelled);
+    }).catch(function (err) {
+      var done = result.cancelled.length ? "Your removal was saved, but your new slots weren't: " : "";
+      if (err && err.error) {
+        showError(done + err.error);
+        if (err.refresh) {
+          state.selected = {};
+          state.removing = {};
+          loadSlots().then(function () { state.lookedUp = ""; lookupMine(); });
+        }
+      } else {
+        showError(done + "We couldn't reach the sign-up sheet. Check your connection and try again.");
+      }
+      refreshSlots();
     }).then(function () {
-      btn.textContent = "Sign me up";
       updateBar();
     });
   }
 
-  function showSuccess(slots) {
-    $("success-name").textContent = $("first-name").value.trim();
-    $("success-list").innerHTML = slots.map(function (s) {
+  function showSuccess(signedUp, cancelled) {
+    function item(s) {
       return "<li><strong>" + esc(s.role) + "</strong> &mdash; " + esc(s.dateLabel) + ", " + esc(s.timeLabel) +
         (s.location ? " &middot; " + esc(s.location) : "") + "</li>";
-    }).join("");
+    }
+    var first = esc($("first-name").value.trim());
+    $("success-title").innerHTML = signedUp.length
+      ? "Thanks, " + first + " &mdash; you're signed up!"
+      : "Got it, " + first + " &mdash; your changes are saved.";
+    $("success-list").innerHTML = signedUp.map(item).join("");
+    $("success-removed").innerHTML = cancelled.length
+      ? '<p class="success-removed-label">Removed from:</p><ul class="success-list">' + cancelled.map(item).join("") + "</ul>"
+      : "";
     $("vol-form").style.display = "none";
     $("vol-success").style.display = "block";
     window.scrollTo({ top: $("vol-success").getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
@@ -570,8 +630,15 @@
 
     $("slot-list").addEventListener("change", function (e) {
       if (!e.target.classList.contains("slot-check")) return;
-      if (e.target.checked) state.selected[e.target.value] = true;
-      else delete state.selected[e.target.value];
+      var id = e.target.value;
+      if (state.mine.indexOf(id) !== -1) {
+        if (e.target.checked) delete state.removing[id];
+        else state.removing[id] = true;
+      } else if (e.target.checked) {
+        state.selected[id] = true;
+      } else {
+        delete state.selected[id];
+      }
       showError("");
       refreshSlots();
     });

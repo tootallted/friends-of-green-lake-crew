@@ -655,7 +655,7 @@ footer a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 .slot.is-picked { border-color: var(--green); background: #f6f8f2; box-shadow: inset 4px 0 0 var(--green); }
-.slot.is-mine { border-color: var(--blue); background: #f2f9fc; cursor: default; box-shadow: inset 4px 0 0 var(--blue); }
+.slot.is-mine { border-color: var(--blue); background: #f2f9fc; box-shadow: inset 4px 0 0 var(--blue); }
 .slot.is-mine .slot-check:checked + .slot-box { background-color: var(--blue-dark); border-color: var(--blue-dark); }
 .slot.is-mine .slot-spots { background: #d6eff6; color: var(--blue-dark); }
 .slot.is-unavailable { cursor: not-allowed; background: var(--bg-alt); }
@@ -907,3 +907,13 @@ footer a:hover { text-decoration: underline; }
 .role-chip-mine { border-color: var(--blue-dark); color: var(--blue-dark); }
 .role-chip-mine .role-chip-count { background: #d6eff6; }
 .role-chip-mine[aria-pressed="true"] { background: var(--blue-dark); border-color: var(--blue-dark); color: #fff; }
+
+/* Volunteer page: dropping one of your own slots */
+.slot.is-removing { border: 1px dashed var(--danger); background: #fdf3ef; }
+.slot.is-removing .slot-role,
+.slot.is-removing .slot-time { text-decoration: line-through; color: var(--muted); }
+.slot.is-removing .slot-spots { background: #fbebe5; color: var(--danger); }
+.slot.is-removing .slot-note { color: var(--danger); }
+.success-removed-label { margin: 0.5rem 0 0; font-weight: 700; color: var(--green-dark); }
+#success-removed .success-list { margin-top: 0.5rem; }
+#success-removed .success-list li { text-decoration: line-through; color: var(--muted); }

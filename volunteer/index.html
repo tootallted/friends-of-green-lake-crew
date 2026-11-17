@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/styles.css?v=13">
+<link rel="stylesheet" href="../assets/styles.css?v=14">
 </head>
 <body>
 
@@ -47,8 +47,9 @@
   </div>
 
   <div class="story-success vol-success" id="vol-success" style="display: none;" role="status">
-    <p class="story-success-title">Thanks, <span id="success-name"></span> &mdash; you're signed up!</p>
+    <p class="story-success-title" id="success-title"></p>
     <ul class="success-list" id="success-list"></ul>
+    <div id="success-removed"></div>
     <p>A confirmation is on its way to your inbox.</p>
     <button type="button" class="btn btn-green" id="another-btn">Sign up for another slot</button>
   </div>
@@ -127,6 +128,6 @@
 </footer>
 
 <script src="../assets/volunteer-config.js?v=2"></script>
-<script src="../assets/volunteer.js?v=7"></script>
+<script src="../assets/volunteer.js?v=8"></script>
 </body>
 </html>
