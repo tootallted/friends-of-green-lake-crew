@@ -12,7 +12,9 @@
   var state = {
     // selected: new slots to sign up for; removing: my existing slots to drop.
     // slots: shifts to work; donations: items to bring (e.g. baked goods).
-    slots: [], donations: [], donationText: {}, byId: {}, selected: {}, removing: {}, mine: [], lookedUp: "",
+    // myItems: {id: {quantity, details}} for items I bring; qty: amounts changed on the page.
+    slots: [], donations: [], donationText: {}, myItems: {}, qty: {},
+    byId: {}, selected: {}, removing: {}, mine: [], lookedUp: "",
     // ?role=Concessions pre-filters the list, so organizers can link to one job.
     role: new URLSearchParams(window.location.search).get("role") || ""
   };
@@ -87,22 +89,38 @@
       slot("B2", "Banana Bread", 0, 6.9, 7, 2, 0, "Baked Goods dropped off at food tent", "Baked Goods", "donation"),
       slot("B3", "Gluten Free Cookies", 0, 6.9, 7, 2, 2, "Baked Goods dropped off at food tent", "Baked Goods", "donation")
     ];
-    var mine = {};
+    var mine = {}; // email -> {slotId: quantity}
     function delay(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 450); }); }
+    function mineOf(email) {
+      var m = mine[email.toLowerCase()] = mine[email.toLowerCase()] || {};
+      var items = {};
+      Object.keys(m).forEach(function (id) { items[id] = { quantity: m[id], details: "" }; });
+      return { mySlotIds: Object.keys(m), myItems: items };
+    }
+    function setQty(s, name, from, to) {
+      s.filled += to - from;
+      s.remaining = s.capacity - s.filled;
+      s.names = s.names.filter(function (n) { return n.indexOf(name) !== 0; });
+      if (to) s.names.push(to > 1 ? name + " (\u00d7" + to + ")" : name);
+    }
     return {
       slots: function () { return delay({ ok: true, slots: slots }); },
       post: function (p) {
-        if (p.action === "lookup") return delay({ ok: true, mySlotIds: mine[p.email.toLowerCase()] || [] });
-        if (p.action === "cancel") {
-          var gone = slots.filter(function (s) { return p.slotIds.indexOf(s.id) !== -1; });
-          gone.forEach(function (s) { s.filled--; s.remaining++; s.names.splice(s.names.indexOf(p.firstName + " " + p.lastName), 1); });
-          mine[p.email.toLowerCase()] = (mine[p.email.toLowerCase()] || []).filter(function (id) { return p.slotIds.indexOf(id) === -1; });
-          return delay({ ok: true, cancelled: gone, mySlotIds: mine[p.email.toLowerCase()], slots: slots });
-        }
-        var list = mine[p.email.toLowerCase()] = (mine[p.email.toLowerCase()] || []).concat(p.slotIds);
-        var picked = slots.filter(function (s) { return p.slotIds.indexOf(s.id) !== -1; });
-        picked.forEach(function (s) { s.filled++; s.remaining--; s.names.push(p.firstName + " " + p.lastName); });
-        return delay({ ok: true, signedUp: picked, mySlotIds: list, slots: slots });
+        var res = mineOf(p.email);
+        var m = mine[p.email.toLowerCase()];
+        var name = p.firstName + " " + p.lastName;
+        if (p.action === "lookup") return delay(Object.assign({ ok: true }, res));
+        var touched = slots.filter(function (s) { return p.slotIds.indexOf(s.id) !== -1; });
+        touched.forEach(function (s) {
+          var to = p.action === "cancel" ? 0 : s.kind === "donation" ? (p.quantities || {})[s.id] || 1 : 1;
+          setQty(s, name, m[s.id] || 0, to);
+          if (to) m[s.id] = to; else delete m[s.id];
+        });
+        var out = Object.assign({ ok: true, slots: slots }, mineOf(p.email));
+        out[p.action === "cancel" ? "cancelled" : "signedUp"] = touched.map(function (s) {
+          return Object.assign({}, s, { quantity: m[s.id] || 0 });
+        });
+        return delay(out);
       }
     };
   }
@@ -181,39 +199,91 @@
     list.innerHTML = state.donations.map(function (s) {
       var id = esc(s.id);
       return '<div class="slot slot-donation" data-id="' + id + '">' +
-        '<label class="donation-pick">' +
-        '<input type="checkbox" class="slot-check" value="' + id + '">' +
-        '<span class="slot-box" aria-hidden="true"></span>' +
+        '<div class="donation-row">' +
         '<span class="slot-main"><span class="slot-role">' + esc(s.role) + "</span>" +
         (s.location ? '<span class="slot-meta">' + esc(s.location) + "</span>" : "") +
         (s.names && s.names.length ? '<span class="slot-names"><span class="slot-names-label">Bringing:</span> ' +
           s.names.map(esc).join(", ") + "</span>" : "") +
         '<span class="slot-note"></span></span>' +
         '<span class="slot-spots"></span>' +
-        "</label>" +
+        '<span class="qty-stepper" role="group" aria-label="How many ' + esc(s.role) + ' you\'ll bring">' +
+        '<button type="button" class="qty-btn" data-step="-1" aria-label="One fewer ' + esc(s.role) + '">&minus;</button>' +
+        '<output class="qty-value" aria-live="polite">0</output>' +
+        '<button type="button" class="qty-btn" data-step="1" aria-label="One more ' + esc(s.role) + '">+</button>' +
+        "</span></div>" +
         '<div class="donation-details" hidden>' +
         '<label for="dd-' + id + '">What are you bringing?</label>' +
         '<input type="text" id="dd-' + id + '" class="donation-input" data-id="' + id + '" maxlength="300"' +
-        ' placeholder="e.g. 1 dozen, homemade, contains nuts" value="' + esc(state.donationText[s.id] || "") + '">' +
+        ' placeholder="e.g. homemade, a dozen each, contains nuts">' +
         "</div></div>";
     }).join("");
     section.style.display = "block";
   }
 
-  // Show the details box (required) for each newly picked item; update the claimed count.
+  function haveQty(id) {
+    return state.myItems[id] ? state.myItems[id].quantity : 0;
+  }
+
+  function wantQty(id) {
+    return id in state.qty ? state.qty[id] : haveQty(id);
+  }
+
+  // Turn an item's amount change into a signup (new or changed amount) or a removal (down to 0).
+  function syncItem(id) {
+    var want = wantQty(id), have = haveQty(id);
+    if (want > 0 && want !== have) state.selected[id] = true; else delete state.selected[id];
+    if (have > 0 && want === 0) state.removing[id] = true; else delete state.removing[id];
+  }
+
+  function onStep(e) {
+    var btn = e.target.closest(".qty-btn");
+    if (!btn) return;
+    var id = btn.closest(".slot").getAttribute("data-id");
+    var s = state.byId[id];
+    var max = s.remaining + haveQty(id);
+    state.qty[id] = Math.max(0, Math.min(max, wantQty(id) + Number(btn.getAttribute("data-step"))));
+    syncItem(id);
+    showError("");
+    refreshSlots();
+  }
+
+  // Update each item's amount, buttons, notes and details box; update the claimed count.
   function refreshDonations(mineMode) {
     document.querySelectorAll("#donation-list .slot").forEach(function (row) {
       var id = row.getAttribute("data-id");
-      var picked = !!state.selected[id];
+      var s = state.byId[id];
+      var have = haveQty(id), want = wantQty(id);
+      var max = s.remaining + have;
+      var changing = !!state.selected[id];
+      row.querySelector(".qty-value").textContent = want;
+      row.querySelector('[data-step="-1"]').disabled = want <= 0;
+      row.querySelector('[data-step="1"]').disabled = want >= max;
+      row.className = "slot slot-donation" +
+        (have && want === have ? " is-mine" : "") +
+        (changing ? " is-picked" : "") +
+        (state.removing[id] ? " is-removing" : "") +
+        (!max ? " is-unavailable" : "");
+
+      var stillNeeded = Math.max(s.capacity - (s.filled - have + want), 0);
+      row.querySelector(".slot-spots").textContent = have && want === have ? "You're bringing " + have
+        : !max ? "All claimed" : stillNeeded + " of " + s.capacity + " needed";
+      row.querySelector(".slot-note").textContent = state.removing[id] ? "You'll be taken off this item when you save."
+        : changing && have ? "Changing from " + have + " to " + want + " when you save." : "";
+
       var details = row.querySelector(".donation-details");
-      details.hidden = !picked;
-      details.querySelector("input").required = picked;
-      row.hidden = mineMode && state.mine.indexOf(id) === -1;
+      var input = details.querySelector("input");
+      details.hidden = !changing;
+      input.required = changing;
+      if (changing && !input.value) {
+        input.value = state.donationText[id] || (state.myItems[id] && state.myItems[id].details) || "";
+        state.donationText[id] = input.value;
+      }
+      row.hidden = mineMode && !have;
     });
     var t = tally(state.donations);
     $("donation-summary").innerHTML = "<strong>" + t.filled + " of " + t.total + "</strong> items claimed" +
       (t.total > t.filled ? ' <span class="fill-open">&middot; ' + (t.total - t.filled) + " still needed</span>" : "");
-    var anyMine = state.donations.some(function (s) { return state.mine.indexOf(s.id) !== -1; });
+    var anyMine = state.donations.some(function (s) { return haveQty(s.id) > 0; });
     $("donation-section").style.display = !state.donations.length || (mineMode && !anyMine) ? "none" : "block";
   }
 
@@ -429,7 +499,7 @@
     var keptMine = mineSlots.filter(function (o) { return !state.removing[o.id] && !isDonation(o); });
     picked = picked.filter(function (o) { return !isDonation(o); });
 
-    document.querySelectorAll("#slot-list .slot, #donation-list .slot").forEach(function (row) {
+    document.querySelectorAll("#slot-list .slot").forEach(function (row) {
       var s = state.byId[row.getAttribute("data-id")];
       var box = row.querySelector("input");
       var note = row.querySelector(".slot-note");
@@ -485,8 +555,11 @@
   function updateBar() {
     var n = Object.keys(state.selected).length;
     var r = Object.keys(state.removing).length;
+    var items = Object.keys(state.selected).filter(function (id) { return isDonation(state.byId[id]); }).length;
+    var shifts = n - items;
     var parts = [];
-    if (n) parts.push(n + (n === 1 ? " slot" : " slots") + " selected");
+    if (shifts) parts.push(shifts + (shifts === 1 ? " slot" : " slots") + " selected");
+    if (items) parts.push(items + (items === 1 ? " baked good" : " baked goods"));
     if (r) parts.push(r + " to remove");
     $("selected-count").textContent = parts.length ? parts.join(" · ") : "Pick one or more slots";
     $("submit-btn").disabled = n + r === 0 || !configured;
@@ -515,8 +588,11 @@
     api.post({ action: "lookup", email: email }).then(function (res) {
       if (state.lookedUp !== email || !res.ok) return;
       state.mine = res.mySlotIds || [];
+      state.myItems = res.myItems || {};
       state.mine.forEach(function (id) { delete state.selected[id]; });
+      state.donations.forEach(function (s) { delete state.selected[s.id]; });
       state.removing = {};
+      state.qty = {};
       refreshSlots();
     }).catch(function () {});
   }
@@ -613,13 +689,18 @@
       website: $("website").value
     };
     var donationDetails = {};
+    var quantities = {};
     adds.forEach(function (id) {
-      if (isDonation(state.byId[id])) donationDetails[id] = (state.donationText[id] || "").trim();
+      if (isDonation(state.byId[id])) {
+        donationDetails[id] = (state.donationText[id] || "").trim();
+        quantities[id] = wantQty(id);
+      }
     });
     var result = { signedUp: [], cancelled: [] };
 
     function apply(res) {
       state.mine = res.mySlotIds || state.mine;
+      state.myItems = res.myItems || state.myItems;
       state.lookedUp = $("email").value.trim().toLowerCase();
       if (res.slots) setSlots(res.slots);
     }
@@ -641,6 +722,7 @@
     }
     if (adds.length) {
       info.donationDetails = donationDetails;
+      info.quantities = quantities;
       chain = chain.then(function () { return send("signup", adds); }).then(function (res) {
         result.signedUp = res.signedUp || [];
         state.selected = {};
@@ -649,6 +731,7 @@
     }
 
     chain.then(function () {
+      state.qty = {};
       saveInfo();
       showSuccess(result.signedUp, result.cancelled);
     }).catch(function (err) {
@@ -672,7 +755,7 @@
   function showSuccess(signedUp, cancelled) {
     function item(s) {
       if (isDonation(s)) {
-        return "<li>Bringing <strong>" + esc(s.role) + "</strong> &mdash; drop off by " +
+        return "<li>Bringing <strong>" + (s.quantity > 1 ? s.quantity + " &times; " : "") + esc(s.role) + "</strong> &mdash; drop off by " +
           esc(s.timeLabel.split(" – ").pop()) + ", " + esc(s.dateLabel) + "</li>";
       }
       return "<li><strong>" + esc(s.role) + "</strong> &mdash; " + esc(s.dateLabel) + ", " + esc(s.timeLabel) +
@@ -704,7 +787,7 @@
     if (demo) $("demo-banner").style.display = "block";
     restoreInfo();
 
-    $("donation-list").addEventListener("change", onSlotToggle);
+    $("donation-list").addEventListener("click", onStep);
     $("slot-list").addEventListener("change", onSlotToggle);
     function onSlotToggle(e) {
       if (!e.target.classList.contains("slot-check")) return;

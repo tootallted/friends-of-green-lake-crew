@@ -988,3 +988,45 @@ section.announcement p:last-child { margin-bottom: 0; }
   padding-top: 2.5rem;
   border-top: 2px dashed var(--border);
 }
+
+/* Volunteer page: baked goods amount steppers */
+.slot.slot-donation { cursor: default; }
+.slot-donation .donation-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  padding: 0.9rem 1.1rem;
+}
+.slot-donation .donation-row > * { grid-area: auto; }
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.qty-btn {
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--green-dark);
+  cursor: pointer;
+}
+.qty-btn:hover:not(:disabled) { background: var(--green-light); }
+.qty-btn:focus-visible { outline: 2px solid var(--blue-dark); outline-offset: -2px; }
+.qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.qty-value { min-width: 1.8rem; text-align: center; font-weight: 800; color: var(--fg); }
+.slot-donation.is-picked .qty-stepper { border-color: var(--green); }
+.slot-donation.is-mine .qty-stepper { border-color: var(--blue); }
+.slot-donation .donation-details { padding-left: 1.1rem; }
+@media (max-width: 600px) {
+  .slot-donation .donation-row { grid-template-columns: 1fr auto; }
+  .slot-donation .donation-row .slot-main { grid-column: 1 / -1; }
+}
