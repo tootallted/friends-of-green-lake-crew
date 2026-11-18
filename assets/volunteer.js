@@ -187,6 +187,7 @@
   function renderDonations() {
     var section = $("donation-section");
     var list = $("donation-list");
+    $("jump-baked").hidden = !state.donations.length;
     if (!state.donations.length) {
       section.style.display = "none";
       list.innerHTML = "";

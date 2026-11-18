@@ -1057,3 +1057,27 @@ header.page-hero .hero-date {
   #donation-list { grid-template-columns: 1fr; }
 }
 #donation-list .slot-spots { justify-self: start; }
+
+/* Announcement: jump links to sections 2 and 3 */
+.announcement-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+.announcement-links .btn { padding: 0.6rem 1.2rem; }
+.announcement-links [hidden] { display: none; }
+.btn-ghost {
+  background: transparent;
+  color: var(--green-dark);
+  border-color: var(--green);
+}
+.btn-ghost:hover { background: var(--green-light); }
+/* Leave room for the sticky site header when jumping to a section */
+#slots-heading, #donation-section { scroll-margin-top: 6rem; }
+@media (max-width: 760px) {
+  #slots-heading, #donation-section { scroll-margin-top: 15rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
