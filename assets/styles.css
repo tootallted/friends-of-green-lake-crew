@@ -1030,3 +1030,16 @@ section.announcement p:last-child { margin-bottom: 0; }
   .slot-donation .donation-row { grid-template-columns: 1fr auto; }
   .slot-donation .donation-row .slot-main { grid-column: 1 / -1; }
 }
+
+/* Page hero: event date under the title */
+header.page-hero .hero-date {
+  display: inline-block;
+  margin: 0.5rem 0 0;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
